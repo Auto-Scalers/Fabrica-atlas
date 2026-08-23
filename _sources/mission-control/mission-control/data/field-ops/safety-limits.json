@@ -1,0 +1,13 @@
+{
+  "global": {
+    "enabled": true,
+    "dailyBudgetUsd": 100,
+    "weeklyBudgetUsd": 500,
+    "monthlyBudgetUsd": 2000,
+    "pauseOnBreach": true
+  },
+  "services": {},
+  "spendLog": [],
+  "updatedAt": "2026-03-18T00:00:00.000Z",
+  "updatedBy": "me"
+}

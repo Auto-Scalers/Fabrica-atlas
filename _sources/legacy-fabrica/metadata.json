@@ -1,0 +1,8 @@
+{
+  "name": "Fabrica",
+  "description": "Stop prompting if you run Business & Coding sessions manualy with 80-hour work weeks, files & spreadsheets.\nRun on 24/7 AI Autonomy and Scale. Draft, plan, execute, and verify -- Monitor from a single Dashboard, with zero technical setup.\nFabrica. your Next AI EXIT.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

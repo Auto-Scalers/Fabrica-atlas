@@ -1,0 +1,115 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "IndividualMissionSchema",
+  "description": "Schema for individual mission definition files stored at /mnt/missions/<mission_id>.json",
+  "type": "object",
+  "required": [
+    "id",
+    "title",
+    "objective",
+    "type",
+    "user_id",
+    "status",
+    "phase",
+    "scratchpad",
+    "sources",
+    "deliverables",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "example": "msn-9821a0"
+    },
+    "title": {
+      "type": "string",
+      "example": "System Architecture Blueprint & Verification"
+    },
+    "objective": {
+      "type": "string",
+      "example": "Define structural boundaries and verify pipeline sync"
+    },
+    "type": {
+      "type": "string",
+      "example": "standard"
+    },
+    "user_id": {
+      "type": "string",
+      "example": "usr-123"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["drafting", "planning", "in_progress", "completed", "failed", "blocked"],
+      "example": "in_progress"
+    },
+    "phase": {
+      "type": "string",
+      "enum": ["discovery", "blueprint", "scaffold", "execute", "review"],
+      "example": "discovery"
+    },
+    "scratchpad": {
+      "type": "string",
+      "example": "missions/msn-9821a0.json"
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "processed"],
+        "properties": {
+          "path": { "type": "string" },
+          "processed": { "type": "boolean" }
+        }
+      }
+    },
+    "deliverables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "processed"],
+        "properties": {
+          "path": { "type": "string" },
+          "processed": { "type": "boolean" }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "tasks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "description", "status"],
+            "properties": {
+              "id": { "type": "string" },
+              "description": { "type": "string" },
+              "status": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "workflow_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["timestamp", "phase", "status"],
+        "properties": {
+          "timestamp": { "type": "string", "format": "date-time" },
+          "phase": { "type": "string" },
+          "status": { "type": "string" }
+        }
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "missions": [
+    {
+      "id": "fmission_demo_1",
+      "title": "First Mission: Share Your Stack",
+      "description": "Your first Field Ops mission. These are pre-loaded posts about Mission Control — yes, we know. Edit them, rewrite them, or use them as-is. The point is to walk through the workflow: approve a task, connect a service, hit execute. If you happen to tell someone about MC along the way... we won't complain.",
+      "status": "active",
+      "autonomyLevel": "approve-high-risk",
+      "linkedProjectId": null,
+      "tasks": [
+        "ftask_demo_1",
+        "ftask_demo_2",
+        "ftask_demo_3",
+        "ftask_demo_4",
+        "ftask_demo_5",
+        "ftask_demo_6"
+      ],
+      "createdAt": "2026-08-06T14:21:06.572Z",
+      "updatedAt": "2026-08-08T14:21:06.572Z",
+      "completedAt": null
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "polling": {
+    "enabled": true,
+    "intervalMinutes": 5
+  },
+  "concurrency": {
+    "maxParallelAgents": 6
+  },
+  "schedule": {
+    "dailyPlan": {
+      "enabled": true,
+      "cron": "0 7 * * *",
+      "command": "daily-plan"
+    },
+    "standup": {
+      "enabled": true,
+      "cron": "0 9 * * 1-5",
+      "command": "standup"
+    },
+    "weeklyReview": {
+      "enabled": true,
+      "cron": "0 17 * * 5",
+      "command": "weekly-review"
+    }
+  },
+  "execution": {
+    "maxTurns": 57,
+    "timeoutMinutes": 30,
+    "retries": 1,
+    "retryDelayMinutes": 5,
+    "skipPermissions": false,
+    "allowedTools": [
+      "Edit",
+      "Write",
+      "Read",
+      "Glob",
+      "Grep",
+      "Bash",
+      "WebSearch",
+      "WebFetch"
+    ],
+    "agentTeams": false,
+    "claudeBinaryPath": null,
+    "maxTaskContinuations": 2
+  },
+  "inbox": {
+    "maxContinuations": 2,
+    "maxTurnsPerSession": 25,
+    "timeoutPerSessionMinutes": 15
+  },
+  "fieldOps": {
+    "autoExecute": false,
+    "pollIntervalMinutes": 5,
+    "maxConcurrentExecutions": 2,
+    "requireVaultSession": true
+  }
+}

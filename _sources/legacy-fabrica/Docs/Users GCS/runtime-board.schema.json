@@ -1,0 +1,139 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RuntimeBoardSchema",
+  "description": "Schema for runtime-board.json stored at /mnt/runtime-board.json",
+  "type": "object",
+  "required": [
+    "tenant_id",
+    "name",
+    "status",
+    "selected_model",
+    "autonomy",
+    "agent_lang",
+    "output_language",
+    "web_search_enabled",
+    "skills_enabled",
+    "integrations_enabled",
+    "suggestions",
+    "backlog",
+    "review_queues",
+    "new_user_actions",
+    "settings",
+    "telemetry",
+    "logs",
+    "last_active"
+  ],
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "example": "usr-123"
+    },
+    "name": {
+      "type": "string",
+      "example": "Tenant (usr-123)"
+    },
+    "plan": {
+      "type": "string",
+      "example": "Professional"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["idle", "running", "paused", "completed", "error"],
+      "example": "idle"
+    },
+    "selected_model": {
+      "type": "string",
+      "example": "gemini-3.6-flash"
+    },
+    "autonomy": {
+      "type": "string",
+      "enum": ["director", "autonomous", "supervised"],
+      "example": "director"
+    },
+    "agent_lang": {
+      "type": "string",
+      "example": "EN"
+    },
+    "output_language": {
+      "type": "string",
+      "example": "English"
+    },
+    "web_search_enabled": {
+      "type": "boolean",
+      "example": true
+    },
+    "skills_enabled": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "boolean"
+      }
+    },
+    "integrations_enabled": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "boolean"
+      }
+    },
+    "suggestions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "text": { "type": "string" },
+          "action_type": { "type": "string" }
+        }
+      }
+    },
+    "backlog": { "type": "array" },
+    "review_queues": { "type": "array" },
+    "review": { "type": "array" },
+    "new_user_actions": {
+      "type": "object",
+      "properties": {
+        "backlog_actions": { "type": "array" },
+        "reviews_actions": { "type": "array" },
+        "missions_actions": { "type": "array" },
+        "workspace_actions": { "type": "array" }
+      }
+    },
+    "settings": {
+      "type": "object",
+      "properties": {
+        "language": { "type": "string" },
+        "internet_access": { "type": "boolean" }
+      }
+    },
+    "subscription": {
+      "type": "object",
+      "properties": {
+        "plan": { "type": "string" },
+        "active": { "type": "boolean" }
+      }
+    },
+    "telemetry": {
+      "type": "object",
+      "properties": {
+        "total_runs": { "type": "integer" },
+        "last_active": { "type": "string", "format": "date-time" }
+      }
+    },
+    "logs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "type": { "type": "string" },
+          "event": { "type": "string" },
+          "details": { "type": "string" }
+        }
+      }
+    },
+    "last_active": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

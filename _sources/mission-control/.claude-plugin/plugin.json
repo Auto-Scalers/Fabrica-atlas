@@ -1,0 +1,8 @@
+{
+  "name": "workspace",
+  "description": "Solo entrepreneur workspace with Mission Control task management, Eisenhower matrix, and AI agent team operations",
+  "version": "0.2.0",
+  "author": {
+    "name": "Dude"
+  }
+}

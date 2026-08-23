@@ -1,0 +1,75 @@
+{
+  "skills": [
+    {
+      "id": "skill_demo_research",
+      "name": "Web Research",
+      "description": "Deep web research with structured markdown output",
+      "content": "# Web Research\n\nWhen performing research:\n1. Search the web for the most current information\n2. Cross-reference multiple sources for accuracy\n3. Focus on practical, actionable findings\n4. Save findings to the research/ directory as markdown\n\n## Output Format\n- Executive Summary (3-5 sentences)\n- Key Findings (bulleted list)\n- Opportunities / Risks\n- Recommended Next Steps\n- Sources (links and references)",
+      "agentIds": [
+        "researcher"
+      ],
+      "tags": [
+        "research",
+        "analysis"
+      ],
+      "createdAt": "2026-01-24T22:17:49.775Z",
+      "updatedAt": "2026-01-24T22:17:49.775Z"
+    },
+    {
+      "id": "skill_demo_eisenhower",
+      "name": "Eisenhower Matrix Triage",
+      "description": "Applies Eisenhower matrix logic to prioritize work",
+      "content": "# Eisenhower Matrix Triage\n\n## Quadrant Definitions\n| Quadrant | Criteria | Action |\n|----------|----------|--------|\n| DO | important + urgent | Work on immediately |\n| SCHEDULE | important + not-urgent | Block time |\n| DELEGATE | not-important + urgent | Assign to agent |\n| ELIMINATE | not-important + not-urgent | Drop or defer |\n\n## Triage Rules\n1. New tasks default to SCHEDULE unless deadline < 48 hours\n2. DELEGATE tasks should always have assignedTo set\n3. Review DO quadrant daily",
+      "agentIds": [
+        "me",
+        "business-analyst"
+      ],
+      "tags": [
+        "prioritization",
+        "eisenhower",
+        "triage"
+      ],
+      "createdAt": "2026-01-24T22:17:49.775Z",
+      "updatedAt": "2026-01-24T22:17:49.775Z"
+    },
+    {
+      "id": "skill_demo_task_mgmt",
+      "name": "Task Management",
+      "description": "Manages tasks in Mission Control via JSON data files",
+      "content": "# Task Management\n\nAll data lives in mission-control/data/ as JSON files.\n\n## Quick Reference\n- AI Context: mission-control/data/ai-context.md (read FIRST)\n- Tasks: mission-control/data/tasks.json\n- Goals: mission-control/data/goals.json\n- Projects: mission-control/data/projects.json\n\n## Creating a Task\nRequired: id, title, description, importance, urgency, kanban, assignedTo\nGenerate IDs as: task_{Date.now()}\n\n## After Any Data Modification\nRun pnpm gen:context in mission-control/ to regenerate ai-context.md",
+      "agentIds": [
+        "developer",
+        "researcher",
+        "marketer",
+        "business-analyst"
+      ],
+      "tags": [
+        "tasks",
+        "management",
+        "workflow"
+      ],
+      "createdAt": "2026-01-24T22:17:49.775Z",
+      "updatedAt": "2026-01-24T22:17:49.775Z"
+    },
+    {
+      "id": "skill_field_ops",
+      "name": "Field Ops Integration",
+      "description": "Enables agents to create, manage, and monitor Field Ops tasks (external actions like tweets, payments, deployments) via the Field Ops API",
+      "content": "# Field Ops Integration\n\nField Ops is the system for executing external actions — social media posts, crypto transfers, email campaigns, payments, and more. As an agent, you can create field tasks, submit them for approval, and check results.\n\n## Reading Field Ops State\n\nRead these files directly for awareness:\n- `mission-control/data/field-ops/services.json` — connected external services\n- `mission-control/data/field-ops/missions.json` — field missions (groups of tasks)\n- `mission-control/data/field-ops/tasks.json` — individual field tasks and their status\n- `mission-control/data/field-ops/activity-log.json` — execution history\n\nAlso check `ai-context.md` which includes a Field Ops Status section.\n\n### Service Status Check\n\nBefore creating tasks, check the service's `status` in `services.json`:\n- `connected` — ready to use\n- `saved` — credentials saved but not activated/verified yet\n- `disconnected` — not usable, needs human to reconnect\n\nOnly create tasks for services with status `connected` or `saved`.\n\n## Field Task Lifecycle\n\n```\ndraft → pending-approval → approved → executing → completed (done)\n           ↘ rejected → draft (resubmit after fixing)\n                         failed → draft (retry)\n```\n\nKey rules:\n- If `approvalRequired: true`, you MUST go draft → pending-approval → approved. Direct draft → approved returns 403.\n- `failed` and `rejected` are NOT terminal — transition back to `draft` to retry or resubmit.\n- After rejection, check `rejectionFeedback` for what to fix before resubmitting.\n\n### Risk Classification & Approval\n\n| Task Type | Base Risk | Approval Notes |\n|-----------|-----------|----------------|\n| social-post | medium | Escalates to HIGH if service is high-risk |\n| crypto-transfer | high | Always requires approval regardless of autonomy |\n| custom | high | Always requires approval (security policy) |\n| design | low | May auto-execute under full-autonomy missions |\n| email-campaign | medium | Depends on mission autonomy level |\n| publish | medium | Depends on mission autonomy level |\n| payment | high | Always requires approval |\n\nMission `autonomyLevel` controls when approval is needed:\n- `approve-all` — ALL tasks require human approval\n- `approve-high-risk` — only HIGH risk tasks need approval\n- `full-autonomy` — only HIGH risk + custom tasks need approval\n\n### Circuit Breaker\n\n3 consecutive failed tasks in a mission will auto-pause the mission. If your tasks aren't executing, check the mission status — it may be paused. The human must resume it.\n\n## Creating a Field Mission\n\nPOST `http://localhost:3000/api/field-ops/missions`\n```json\n{\n  \"title\": \"Q2 Social Campaign\",\n  \"description\": \"Post announcements across social channels\",\n  \"autonomyLevel\": \"approve-all\",\n  \"linkedProjectId\": \"proj_xxx\",\n  \"actor\": \"<your-agent-id>\"\n}\n```\n\n## Creating a Field Task\n\nPOST `http://localhost:3000/api/field-ops/tasks`\n```json\n{\n  \"title\": \"Post launch announcement on Twitter\",\n  \"description\": \"Announce the v1.0 launch with key features\",\n  \"type\": \"social-post\",\n  \"serviceId\": \"twitter\",\n  \"missionId\": \"fmission_xxx\",\n  \"assignedTo\": \"<your-agent-id>\",\n  \"status\": \"draft\",\n  \"approvalRequired\": true,\n  \"payload\": {\n    \"operation\": \"tweet\",\n    \"text\": \"Exciting news! We just launched v1.0...\"\n  },\n  \"linkedTaskId\": \"task_xxx\",\n  \"actor\": \"<your-agent-id>\"\n}\n```\n\nPayload must be under 10KB. Setting `linkedTaskId` automatically cross-links the regular task.\n\nOptional fields:\n- `scheduledFor`: ISO timestamp to delay execution (e.g. `\"2026-03-17T09:00:00Z\"` for tomorrow 9am)\n- `blockedBy`: array of field task IDs that must complete first (auto-unblocked on completion)\n\n### Payload Examples by Type\n\n**social-post (Twitter):**\n```json\n{ \"operation\": \"tweet\", \"text\": \"Your tweet text here\" }\n```\n\n**crypto-transfer (Ethereum):**\n```json\n{ \"operation\": \"send-usdc\", \"to\": \"0x...\", \"amount\": \"50\" }\n```\nOperations: `send-usdc`, `send-eth`\n\n**custom:**\n```json\n{ \"operation\": \"custom\", \"data\": { ... } }\n```\n\n## Submitting for Approval\n\n### Single task:\nPUT `http://localhost:3000/api/field-ops/tasks`\n```json\n{ \"id\": \"ftask_xxx\", \"status\": \"pending-approval\", \"actor\": \"<your-agent-id>\" }\n```\n\n### Batch (multiple tasks at once):\nPOST `http://localhost:3000/api/field-ops/batch`\n```json\n{\n  \"action\": \"submit-for-approval\",\n  \"taskIds\": [\"ftask_xxx\", \"ftask_yyy\", \"ftask_zzz\"],\n  \"actor\": \"<your-agent-id>\"\n}\n```\nBatch actions: `submit-for-approval`, `approve`, `reject`. Max 50 tasks per batch.\n\n## Using Templates\n\nTemplates are pre-built field task configurations with variable slots.\n\n### List templates:\nGET `http://localhost:3000/api/field-ops/templates`\n\n### Create from template:\nPOST `http://localhost:3000/api/field-ops/templates/instantiate`\n```json\n{\n  \"templateId\": \"ftpl_xxx\",\n  \"missionId\": \"fmission_xxx\",\n  \"assignedTo\": \"<your-agent-id>\",\n  \"variables\": { \"product\": \"Mission Control\", \"url\": \"https://example.com\" },\n  \"actor\": \"<your-agent-id>\"\n}\n```\nTemplate payloads use `{{variableName}}` syntax — provide values in `variables`.\n\n## Task Chaining\n\nSet `blockedBy: [\"ftask_aaa\"]` on a task to block it until `ftask_aaa` completes. When a task completes, all downstream tasks are automatically unblocked. Use this for sequential workflows like: post tweet A → post reply B using A's URL.\n\n## Checking Results\n\nRead `mission-control/data/field-ops/tasks.json` and look for:\n- `status: \"completed\"` — check the `result` field for output data (tweet URL, tx hash, etc.)\n- `status: \"failed\"` — check `result.error` for failure reason. Transition back to `draft` to retry.\n- `status: \"rejected\"` — check `rejectionFeedback` for human feedback. Fix and resubmit as `draft`.\n\nResults also appear in your inbox as notifications automatically.\n\n## Cross-Linking with Regular Tasks\n\nWhen creating field tasks from a regular task assignment, set `linkedTaskId` on the field task pointing to your regular task ID. The reverse link (`fieldTaskIds` on the regular task) is created automatically.\n\n## Task Types\n\n| Type | Service | Use For |\n|------|---------|--------|\n| social-post | twitter, linkedin | Posting on social media |\n| crypto-transfer | ethereum-wallet | Sending cryptocurrency |\n| email-campaign | mailchimp, sendgrid | Email blasts |\n| payment | stripe | Processing payments |\n| publish | vercel, netlify | Deploying websites |\n| design | figma | Design assets |\n| custom | any | Anything else |\n\n## Best Practices\n\n1. Always create field tasks as `draft` first, then submit for approval\n2. Check service status before creating tasks — only use `connected` or `saved` services\n3. Group related tasks under a single mission\n4. Use descriptive titles — humans review these for approval\n5. Include all necessary data in the payload (under 10KB) — adapters use it directly\n6. Set `linkedTaskId` to connect field tasks back to your regular task (reverse link is automatic)\n7. Use batch API when submitting multiple tasks for approval\n8. Use templates for repetitive task patterns\n9. Set `scheduledFor` for time-sensitive posts (e.g. schedule tweets for optimal times)\n10. After creating tasks, mention them in your completion report\n11. If tasks fail, check `result.error` and retry by transitioning back to `draft`\n12. If a mission seems stuck, check its status — the circuit breaker may have paused it",
+      "agentIds": [
+        "developer",
+        "marketer",
+        "business-analyst"
+      ],
+      "tags": [
+        "field-ops",
+        "external-actions",
+        "social-media",
+        "automation",
+        "execution"
+      ],
+      "createdAt": "2026-03-16T22:00:00.000Z",
+      "updatedAt": "2026-03-17T00:30:00.000Z"
+    }
+  ]
+}

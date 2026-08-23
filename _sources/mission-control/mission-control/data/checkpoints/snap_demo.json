@@ -1,0 +1,718 @@
+{
+  "id": "snap_demo",
+  "name": "Demo Data",
+  "description": "Sample tasks, projects, goals, and agent communications to explore Mission Control.",
+  "createdAt": "2026-02-24T18:27:04.683Z",
+  "version": 1,
+  "data": {
+    "tasks": {
+      "tasks": [
+        {
+          "id": "task_demo_1",
+          "title": "Design hero section for landing page",
+          "description": "Create a compelling hero section with headline, subheadline, CTA button, and product screenshot.",
+          "importance": "important",
+          "urgency": "urgent",
+          "kanban": "in-progress",
+          "projectId": "proj_demo_1",
+          "milestoneId": "mile_demo_1",
+          "assignedTo": "developer",
+          "collaborators": [],
+          "dailyActions": [],
+          "subtasks": [
+            {
+              "id": "sub_1",
+              "title": "Write headline copy",
+              "done": true
+            },
+            {
+              "id": "sub_2",
+              "title": "Design layout",
+              "done": true
+            },
+            {
+              "id": "sub_3",
+              "title": "Implement responsive HTML/CSS",
+              "done": false
+            },
+            {
+              "id": "sub_4",
+              "title": "Add animations",
+              "done": false
+            }
+          ],
+          "blockedBy": [],
+          "estimatedMinutes": 180,
+          "actualMinutes": null,
+          "acceptanceCriteria": [
+            "Hero loads in under 2 seconds",
+            "CTA above the fold on mobile"
+          ],
+          "comments": [
+            {
+              "id": "cmt_demo_1",
+              "author": "me",
+              "content": "Focus on 'save time' messaging.",
+              "createdAt": "2026-02-21T18:26:59.160Z"
+            },
+            {
+              "id": "cmt_demo_2",
+              "author": "developer",
+              "content": "Copy done. Moving to responsive implementation.",
+              "createdAt": "2026-02-23T18:26:59.160Z"
+            }
+          ],
+          "tags": [
+            "design",
+            "frontend"
+          ],
+          "notes": "",
+          "createdAt": "2026-02-17T18:26:59.160Z",
+          "updatedAt": "2026-02-24T12:26:59.160Z",
+          "dueDate": null,
+          "completedAt": null,
+          "deletedAt": null
+        },
+        {
+          "id": "task_demo_2",
+          "title": "Set up email signup form with validation",
+          "description": "Add an email capture form to the landing page with validation and duplicate detection.",
+          "importance": "important",
+          "urgency": "not-urgent",
+          "kanban": "not-started",
+          "projectId": "proj_demo_1",
+          "milestoneId": "mile_demo_1",
+          "assignedTo": "developer",
+          "collaborators": [],
+          "dailyActions": [],
+          "subtasks": [],
+          "blockedBy": [
+            "task_demo_1"
+          ],
+          "estimatedMinutes": 120,
+          "actualMinutes": null,
+          "acceptanceCriteria": [
+            "Email validation on client and server",
+            "Duplicate detection"
+          ],
+          "comments": [],
+          "tags": [
+            "backend",
+            "forms"
+          ],
+          "notes": "Consider a third-party form service.",
+          "createdAt": "2026-02-17T18:26:59.160Z",
+          "updatedAt": "2026-02-17T18:26:59.160Z",
+          "dueDate": null,
+          "completedAt": null,
+          "deletedAt": null
+        },
+        {
+          "id": "task_demo_3",
+          "title": "Research competitor API pricing models",
+          "description": "Analyze how competitors price their API access. Look at rate limits, tiers, and developer experience.",
+          "importance": "not-important",
+          "urgency": "urgent",
+          "kanban": "in-progress",
+          "projectId": "proj_demo_2",
+          "milestoneId": "mile_demo_2",
+          "assignedTo": "researcher",
+          "collaborators": [],
+          "dailyActions": [],
+          "subtasks": [
+            {
+              "id": "sub_5",
+              "title": "Identify top 5 competitors",
+              "done": true
+            },
+            {
+              "id": "sub_6",
+              "title": "Document pricing tiers",
+              "done": false
+            }
+          ],
+          "blockedBy": [],
+          "estimatedMinutes": 90,
+          "actualMinutes": null,
+          "acceptanceCriteria": [
+            "Comparison table with 5+ competitors"
+          ],
+          "comments": [
+            {
+              "id": "cmt_demo_3",
+              "author": "researcher",
+              "content": "Found 7 competitors. Full analysis coming tomorrow.",
+              "createdAt": "2026-02-24T10:26:59.160Z"
+            }
+          ],
+          "tags": [
+            "research",
+            "pricing"
+          ],
+          "notes": "",
+          "createdAt": "2026-02-19T18:26:59.160Z",
+          "updatedAt": "2026-02-24T10:26:59.160Z",
+          "dueDate": null,
+          "completedAt": null,
+          "deletedAt": null
+        },
+        {
+          "id": "task_demo_4",
+          "title": "Design API authentication flow",
+          "description": "Design the OAuth2 authentication flow for the API.",
+          "importance": "important",
+          "urgency": "not-urgent",
+          "kanban": "not-started",
+          "projectId": "proj_demo_2",
+          "milestoneId": "mile_demo_2",
+          "assignedTo": null,
+          "collaborators": [],
+          "dailyActions": [],
+          "subtasks": [],
+          "blockedBy": [
+            "task_demo_3"
+          ],
+          "estimatedMinutes": 240,
+          "actualMinutes": null,
+          "acceptanceCriteria": [
+            "OAuth2 flow diagram",
+            "Token rotation strategy"
+          ],
+          "comments": [],
+          "tags": [
+            "security",
+            "architecture"
+          ],
+          "notes": "Depends on competitor research.",
+          "createdAt": "2026-02-19T18:26:59.160Z",
+          "updatedAt": "2026-02-19T18:26:59.160Z",
+          "dueDate": null,
+          "completedAt": null,
+          "deletedAt": null
+        },
+        {
+          "id": "task_demo_5",
+          "title": "Write launch announcement blog post",
+          "description": "Write a blog post announcing the product launch with screenshots and signup link.",
+          "importance": "important",
+          "urgency": "not-urgent",
+          "kanban": "not-started",
+          "projectId": "proj_demo_1",
+          "milestoneId": null,
+          "assignedTo": "marketer",
+          "collaborators": [],
+          "dailyActions": [],
+          "subtasks": [],
+          "blockedBy": [
+            "task_demo_1"
+          ],
+          "estimatedMinutes": 120,
+          "actualMinutes": null,
+          "acceptanceCriteria": [
+            "1000-1500 words",
+            "3+ screenshots",
+            "SEO optimized"
+          ],
+          "comments": [],
+          "tags": [
+            "content",
+            "launch"
+          ],
+          "notes": "",
+          "createdAt": "2026-02-21T18:26:59.160Z",
+          "updatedAt": "2026-02-21T18:26:59.160Z",
+          "dueDate": null,
+          "completedAt": null,
+          "deletedAt": null
+        },
+        {
+          "id": "task_demo_6",
+          "title": "Analyze content marketing strategy options",
+          "description": "Research and recommend a content strategy with effort estimates and expected ROI.",
+          "importance": "not-important",
+          "urgency": "not-urgent",
+          "kanban": "done",
+          "projectId": null,
+          "milestoneId": null,
+          "assignedTo": "business-analyst",
+          "collaborators": [],
+          "dailyActions": [],
+          "subtasks": [
+            {
+              "id": "sub_8",
+              "title": "Research channel options",
+              "done": true
+            },
+            {
+              "id": "sub_9",
+              "title": "Estimate effort",
+              "done": true
+            },
+            {
+              "id": "sub_10",
+              "title": "Create recommendation",
+              "done": true
+            }
+          ],
+          "blockedBy": [],
+          "estimatedMinutes": 90,
+          "actualMinutes": 75,
+          "acceptanceCriteria": [
+            "4+ channels compared",
+            "ROI estimates"
+          ],
+          "comments": [
+            {
+              "id": "cmt_demo_4",
+              "author": "business-analyst",
+              "content": "Recommending blog + Twitter combo. Newsletter after 500 subs.",
+              "createdAt": "2026-02-22T18:26:59.160Z"
+            }
+          ],
+          "tags": [
+            "strategy",
+            "content"
+          ],
+          "notes": "Start with weekly blog posts + Twitter thread repurposing.",
+          "createdAt": "2026-02-14T18:26:59.160Z",
+          "updatedAt": "2026-02-22T18:26:59.160Z",
+          "dueDate": null,
+          "completedAt": "2026-02-22T18:26:59.160Z",
+          "deletedAt": null
+        },
+        {
+          "id": "task_demo_7",
+          "title": "Review and approve landing page design",
+          "description": "Review the developer's landing page implementation and provide feedback.",
+          "importance": "important",
+          "urgency": "urgent",
+          "kanban": "not-started",
+          "projectId": "proj_demo_1",
+          "milestoneId": "mile_demo_1",
+          "assignedTo": "me",
+          "collaborators": [],
+          "dailyActions": [],
+          "subtasks": [],
+          "blockedBy": [
+            "task_demo_1"
+          ],
+          "estimatedMinutes": 30,
+          "actualMinutes": null,
+          "acceptanceCriteria": [
+            "Design reviewed",
+            "Mobile verified",
+            "CTA approved"
+          ],
+          "comments": [],
+          "tags": [
+            "review"
+          ],
+          "notes": "",
+          "createdAt": "2026-02-19T18:26:59.160Z",
+          "updatedAt": "2026-02-19T18:26:59.160Z",
+          "dueDate": null,
+          "completedAt": null,
+          "deletedAt": null
+        }
+      ]
+    },
+    "goals": {
+      "goals": [
+        {
+          "id": "goal_demo_1",
+          "title": "Launch SaaS product to first 100 users",
+          "type": "long-term",
+          "timeframe": "Q2 2026",
+          "parentGoalId": null,
+          "projectId": "proj_demo_1",
+          "status": "in-progress",
+          "milestones": [
+            "mile_demo_1",
+            "mile_demo_2"
+          ],
+          "tasks": [
+            "task_demo_1",
+            "task_demo_2",
+            "task_demo_5"
+          ],
+          "createdAt": "2026-01-25T18:26:59.160Z",
+          "deletedAt": null
+        },
+        {
+          "id": "mile_demo_1",
+          "title": "Landing page live and collecting signups",
+          "type": "medium-term",
+          "timeframe": "2026-03-03T18:26:59.160Z",
+          "parentGoalId": "goal_demo_1",
+          "projectId": "proj_demo_1",
+          "status": "in-progress",
+          "milestones": [],
+          "tasks": [
+            "task_demo_1",
+            "task_demo_2"
+          ],
+          "createdAt": "2026-02-10T18:26:59.160Z",
+          "deletedAt": null
+        },
+        {
+          "id": "mile_demo_2",
+          "title": "Beta API ready for testing",
+          "type": "medium-term",
+          "timeframe": "2026-03-17T18:26:59.160Z",
+          "parentGoalId": "goal_demo_1",
+          "projectId": "proj_demo_2",
+          "status": "not-started",
+          "milestones": [],
+          "tasks": [
+            "task_demo_3",
+            "task_demo_4"
+          ],
+          "createdAt": "2026-02-10T18:26:59.160Z",
+          "deletedAt": null
+        },
+        {
+          "id": "goal_demo_2",
+          "title": "Build sustainable content engine",
+          "type": "long-term",
+          "timeframe": "Q3 2026",
+          "parentGoalId": null,
+          "projectId": null,
+          "status": "not-started",
+          "milestones": [],
+          "tasks": [
+            "task_demo_6"
+          ],
+          "createdAt": "2026-02-17T18:26:59.160Z",
+          "deletedAt": null
+        }
+      ]
+    },
+    "projects": {
+      "projects": [
+        {
+          "id": "proj_demo_1",
+          "name": "SaaS Landing Page",
+          "description": "Build a conversion-optimized landing page for our new SaaS product.",
+          "status": "active",
+          "color": "#3b82f6",
+          "teamMembers": [
+            "developer",
+            "marketer"
+          ],
+          "tags": [
+            "marketing",
+            "web"
+          ],
+          "createdAt": "2026-02-10T18:26:59.160Z",
+          "deletedAt": null
+        },
+        {
+          "id": "proj_demo_2",
+          "name": "API Integration Layer",
+          "description": "Create a unified API layer that connects to third-party services.",
+          "status": "active",
+          "color": "#8b5cf6",
+          "teamMembers": [
+            "developer",
+            "researcher"
+          ],
+          "tags": [
+            "backend",
+            "infrastructure"
+          ],
+          "createdAt": "2026-02-03T18:26:59.160Z",
+          "deletedAt": null
+        },
+        {
+          "id": "proj_demo_3",
+          "name": "Q4 Marketing Campaign",
+          "description": "Multi-channel marketing campaign for Q4 product launch.",
+          "status": "completed",
+          "color": "#10b981",
+          "teamMembers": [
+            "marketer",
+            "business-analyst"
+          ],
+          "tags": [
+            "marketing",
+            "growth"
+          ],
+          "createdAt": "2025-12-26T18:26:59.160Z",
+          "deletedAt": null
+        }
+      ]
+    },
+    "brainDump": {
+      "entries": [
+        {
+          "id": "bd_demo_1",
+          "content": "Add a referral program? Give users unique links for signup rewards.",
+          "capturedAt": "2026-02-22T18:26:59.160Z",
+          "processed": false,
+          "convertedTo": null,
+          "tags": [
+            "growth"
+          ]
+        },
+        {
+          "id": "bd_demo_2",
+          "content": "Compare Stripe vs Paddle for international tax handling.",
+          "capturedAt": "2026-02-23T18:26:59.160Z",
+          "processed": false,
+          "convertedTo": null,
+          "tags": [
+            "payments"
+          ]
+        },
+        {
+          "id": "bd_demo_3",
+          "content": "Add dark mode to the landing page — match the Mission Control vibe.",
+          "capturedAt": "2026-02-24T14:26:59.160Z",
+          "processed": false,
+          "convertedTo": null,
+          "tags": [
+            "design"
+          ]
+        },
+        {
+          "id": "bd_demo_4",
+          "content": "Competitor X raised $5M. Check their positioning.",
+          "capturedAt": "2026-02-21T18:26:59.160Z",
+          "processed": true,
+          "convertedTo": "task_demo_3",
+          "tags": [
+            "competitive"
+          ]
+        }
+      ]
+    },
+    "inbox": {
+      "messages": [
+        {
+          "id": "msg_demo_1",
+          "from": "system",
+          "to": "developer",
+          "type": "delegation",
+          "taskId": "task_demo_1",
+          "subject": "New assignment: Design hero section",
+          "body": "You have been assigned to: \"Design hero section for landing page\"",
+          "status": "read",
+          "createdAt": "2026-02-17T18:26:59.160Z",
+          "readAt": "2026-02-17T18:26:59.160Z"
+        },
+        {
+          "id": "msg_demo_2",
+          "from": "business-analyst",
+          "to": "me",
+          "type": "report",
+          "taskId": "task_demo_6",
+          "subject": "Completed: Content strategy analysis",
+          "body": "Recommendation: Blog + Twitter threads. Newsletter after 500 subs.",
+          "status": "unread",
+          "createdAt": "2026-02-22T18:26:59.160Z",
+          "readAt": null
+        },
+        {
+          "id": "msg_demo_3",
+          "from": "researcher",
+          "to": "me",
+          "type": "update",
+          "taskId": "task_demo_3",
+          "subject": "Progress: API pricing research",
+          "body": "Found 7 competitors. Most offer free tiers with 1000 req/month. Full comparison tomorrow.",
+          "status": "unread",
+          "createdAt": "2026-02-24T10:26:59.160Z",
+          "readAt": null
+        },
+        {
+          "id": "msg_demo_4",
+          "from": "system",
+          "to": "marketer",
+          "type": "delegation",
+          "taskId": "task_demo_5",
+          "subject": "New assignment: Write launch blog post",
+          "body": "You have been assigned to: \"Write launch announcement blog post\"",
+          "status": "unread",
+          "createdAt": "2026-02-21T18:26:59.160Z",
+          "readAt": null
+        }
+      ]
+    },
+    "decisions": {
+      "decisions": [
+        {
+          "id": "dec_demo_1",
+          "requestedBy": "developer",
+          "taskId": "task_demo_1",
+          "question": "Which animation library for the hero section?",
+          "options": [
+            "Framer Motion (full-featured, +30kb)",
+            "CSS animations only (lightweight)",
+            "GSAP (powerful, commercial license)"
+          ],
+          "context": "Hero needs smooth entrance animations and scroll-triggered effects.",
+          "status": "pending",
+          "answer": null,
+          "answeredAt": null,
+          "createdAt": "2026-02-23T18:26:59.160Z"
+        }
+      ]
+    },
+    "agents": {
+      "agents": [
+        {
+          "id": "me",
+          "name": "Me",
+          "icon": "User",
+          "description": "Tasks I do myself — decisions, approvals, creative direction",
+          "instructions": "You are the owner/CEO. Your role is to make decisions, give approvals, provide creative direction, and handle relationship-building. Focus on high-leverage activities that only a human can do.",
+          "capabilities": [
+            "decision-making",
+            "approvals",
+            "creative-direction",
+            "relationship-building"
+          ],
+          "skillIds": [],
+          "status": "active",
+          "createdAt": "2026-01-24T22:17:49.775Z",
+          "updatedAt": "2026-01-24T22:17:49.775Z"
+        },
+        {
+          "id": "researcher",
+          "name": "Researcher",
+          "icon": "Search",
+          "description": "Market research, competitive analysis, evaluation",
+          "instructions": "You are acting as a Research Analyst. Your role is to investigate topics thoroughly and produce actionable insights for a solo software entrepreneur.\n\nSteps:\n1. Read mission-control/data/ai-context.md for current project context\n2. Search the web for the most current information on this topic\n3. Cross-reference multiple sources for accuracy\n4. Focus on practical, actionable findings\n5. Consider the solo entrepreneur context (limited time, limited budget, need for leverage)",
+          "capabilities": [
+            "web-research",
+            "competitive-analysis",
+            "report-writing",
+            "data-gathering",
+            "topic-investigation"
+          ],
+          "skillIds": [
+            "skill_demo_research"
+          ],
+          "status": "active",
+          "createdAt": "2026-01-24T22:17:49.775Z",
+          "updatedAt": "2026-01-24T22:17:49.775Z"
+        },
+        {
+          "id": "developer",
+          "name": "Developer",
+          "icon": "Code",
+          "description": "Implementation, bug fixes, testing, deployment",
+          "instructions": "You are acting as a Software Engineer. Your role is to write clean, well-tested code and handle all technical implementation tasks.\n\nBefore starting:\n1. Read mission-control/data/ai-context.md for current project context\n2. Check the project's CLAUDE.md for coding conventions\n3. Review existing code patterns before writing new code",
+          "capabilities": [
+            "full-stack-development",
+            "bug-fixes",
+            "testing",
+            "code-review",
+            "deployment",
+            "architecture"
+          ],
+          "skillIds": [
+            "skill_demo_task_mgmt"
+          ],
+          "status": "active",
+          "createdAt": "2026-01-24T22:17:49.775Z",
+          "updatedAt": "2026-01-24T22:17:49.775Z"
+        },
+        {
+          "id": "marketer",
+          "name": "Marketer",
+          "icon": "Megaphone",
+          "description": "Copy, growth strategy, content, SEO",
+          "instructions": "You are acting as a Growth Marketing Specialist for a bootstrapped software business.\n\nCapabilities you should apply:\n- Write compelling copy for landing pages, emails, and social media\n- Analyze positioning and messaging\n- Suggest growth experiments\n- Create content outlines for blog posts and documentation",
+          "capabilities": [
+            "copywriting",
+            "growth-strategy",
+            "content-creation",
+            "seo",
+            "social-media",
+            "positioning"
+          ],
+          "skillIds": [],
+          "status": "active",
+          "createdAt": "2026-01-24T22:17:49.775Z",
+          "updatedAt": "2026-01-24T22:17:49.775Z"
+        },
+        {
+          "id": "business-analyst",
+          "name": "Business Analyst",
+          "icon": "BarChart3",
+          "description": "Strategy, planning, prioritization, financials",
+          "instructions": "You are acting as a Business Analyst and Strategist advising a solo software entrepreneur.\n\nBefore starting:\n1. Read mission-control/data/ai-context.md for a quick snapshot of current state\n2. Read mission-control/data/projects.json to understand current projects\n3. Read mission-control/data/goals.json to understand priorities",
+          "capabilities": [
+            "market-analysis",
+            "feature-prioritization",
+            "business-modeling",
+            "financial-projections",
+            "strategic-planning"
+          ],
+          "skillIds": [
+            "skill_demo_eisenhower"
+          ],
+          "status": "active",
+          "createdAt": "2026-01-24T22:17:49.775Z",
+          "updatedAt": "2026-01-24T22:17:49.775Z"
+        }
+      ]
+    },
+    "skillsLibrary": {
+      "skills": [
+        {
+          "id": "skill_demo_research",
+          "name": "Web Research",
+          "description": "Deep web research with structured markdown output",
+          "content": "# Web Research\n\nWhen performing research:\n1. Search the web for the most current information\n2. Cross-reference multiple sources for accuracy\n3. Focus on practical, actionable findings\n4. Save findings to the research/ directory as markdown\n\n## Output Format\n- Executive Summary (3-5 sentences)\n- Key Findings (bulleted list)\n- Opportunities / Risks\n- Recommended Next Steps\n- Sources (links and references)",
+          "agentIds": [
+            "researcher"
+          ],
+          "tags": [
+            "research",
+            "analysis"
+          ],
+          "createdAt": "2026-01-24T22:17:49.775Z",
+          "updatedAt": "2026-01-24T22:17:49.775Z"
+        },
+        {
+          "id": "skill_demo_eisenhower",
+          "name": "Eisenhower Matrix Triage",
+          "description": "Applies Eisenhower matrix logic to prioritize work",
+          "content": "# Eisenhower Matrix Triage\n\n## Quadrant Definitions\n| Quadrant | Criteria | Action |\n|----------|----------|--------|\n| DO | important + urgent | Work on immediately |\n| SCHEDULE | important + not-urgent | Block time |\n| DELEGATE | not-important + urgent | Assign to agent |\n| ELIMINATE | not-important + not-urgent | Drop or defer |\n\n## Triage Rules\n1. New tasks default to SCHEDULE unless deadline < 48 hours\n2. DELEGATE tasks should always have assignedTo set\n3. Review DO quadrant daily",
+          "agentIds": [
+            "me",
+            "business-analyst"
+          ],
+          "tags": [
+            "prioritization",
+            "eisenhower",
+            "triage"
+          ],
+          "createdAt": "2026-01-24T22:17:49.775Z",
+          "updatedAt": "2026-01-24T22:17:49.775Z"
+        },
+        {
+          "id": "skill_demo_task_mgmt",
+          "name": "Task Management",
+          "description": "Manages tasks in Mission Control via JSON data files",
+          "content": "# Task Management\n\nAll data lives in mission-control/data/ as JSON files.\n\n## Quick Reference\n- AI Context: mission-control/data/ai-context.md (read FIRST)\n- Tasks: mission-control/data/tasks.json\n- Goals: mission-control/data/goals.json\n- Projects: mission-control/data/projects.json\n\n## Creating a Task\nRequired: id, title, description, importance, urgency, kanban, assignedTo\nGenerate IDs as: task_{Date.now()}\n\n## After Any Data Modification\nRun pnpm gen:context in mission-control/ to regenerate ai-context.md",
+          "agentIds": [
+            "developer",
+            "researcher",
+            "marketer",
+            "business-analyst"
+          ],
+          "tags": [
+            "tasks",
+            "management",
+            "workflow"
+          ],
+          "createdAt": "2026-01-24T22:17:49.775Z",
+          "updatedAt": "2026-01-24T22:17:49.775Z"
+        }
+      ]
+    }
+  }
+}

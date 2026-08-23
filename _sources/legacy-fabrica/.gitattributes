@@ -1,0 +1,40 @@
+# ─── Line Ending Policy (cross-OS portability) ───────────────────────────────
+# Default: let git auto-handle text files based on content detection.
+* text=auto
+
+# Shell scripts MUST be LF on every OS, otherwise they fail on Linux/macOS
+# with "bad interpreter: /usr/bin/env bash^M: no such file or directory".
+*.sh        text eol=lf
+*.bash      text eol=lf
+
+# Windows-only scripts MUST be CRLF.
+*.ps1       text eol=crlf
+*.psm1      text eol=crlf
+*.psd1      text eol=crlf
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+
+# Plain text / config: enforce LF for cross-OS consistency.
+*.yaml      text eol=lf
+*.yml       text eol=lf
+*.md        text eol=lf
+*.py        text eol=lf
+*.txt       text eol=lf
+*.json      text eol=lf
+.gitignore  text eol=lf
+.gitkeep    text eol=lf
+
+# Binaries — never normalize.
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.ico       binary
+*.pdf       binary
+*.zip       binary
+*.tar       binary
+*.gz        binary
+*.exe       binary
+*.dll       binary
+*.so        binary
+*.dylib     binary

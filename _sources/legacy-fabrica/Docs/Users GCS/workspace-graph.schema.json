@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "WorkspaceGraphSchema",
+  "description": "Schema for workspace-graph.json stored at /mnt/workspace-graph.json",
+  "type": "object",
+  "required": ["sources", "deliverables", "last_synced_at"],
+  "properties": {
+    "sources": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["path", "folder", "size", "mtime"],
+        "properties": {
+          "path": { "type": "string" },
+          "folder": { "type": "string" },
+          "size": { "type": "integer" },
+          "mtime": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "deliverables": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["path", "folder", "size", "mtime"],
+        "properties": {
+          "path": { "type": "string" },
+          "folder": { "type": "string" },
+          "size": { "type": "integer" },
+          "mtime": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "last_synced_at": {
+      "type": "string",
+      "format": "date-time",
+      "example": "2026-08-08T02:10:00.000Z"
+    }
+  }
+}

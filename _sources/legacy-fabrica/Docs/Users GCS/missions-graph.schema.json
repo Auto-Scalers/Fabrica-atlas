@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MissionsGraphSchema",
+  "description": "Schema for missions-graph.json stored at /mnt/missions-graph.json",
+  "type": "object",
+  "required": ["missions", "last_updated"],
+  "properties": {
+    "missions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "objective",
+          "type",
+          "user_id",
+          "status",
+          "phase",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "msn-9821a0"
+          },
+          "title": {
+            "type": "string",
+            "example": "System Architecture Blueprint & Verification"
+          },
+          "objective": {
+            "type": "string",
+            "example": "Define structural boundaries and verify pipeline sync"
+          },
+          "type": {
+            "type": "string",
+            "example": "standard"
+          },
+          "user_id": {
+            "type": "string",
+            "example": "usr-123"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["drafting", "planning", "in_progress", "completed", "failed", "blocked"],
+            "example": "in_progress"
+          },
+          "phase": {
+            "type": "string",
+            "enum": ["discovery", "blueprint", "scaffold", "execute", "review"],
+            "example": "discovery"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-08-08T02:00:00.000Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-08-08T02:05:00.000Z"
+          }
+        }
+      }
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time",
+      "example": "2026-08-08T02:05:00.000Z"
+    }
+  }
+}
