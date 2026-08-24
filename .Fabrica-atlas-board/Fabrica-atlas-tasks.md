@@ -1,4 +1,4 @@
-﻿# Fabrica-atlas — Tasks (Roadmap 02)
+# Fabrica-atlas — Tasks (Roadmap 02)
 
 > Single source of truth for the Atlas discovery & transformation-planning program. Schema: `.Fabrica-board/Fabrica-Schema.md`. Sibling: `.Fabrica-board/Fabrica-Roadmap.md`.
 
@@ -16,8 +16,8 @@
 
 | Metric | Value |
 |---|---|
-| Total tasks | 90 |
-| ✅ DONE | 90 |
+| Total tasks | 91 |
+| ✅ DONE | 91 |
 | 🔶 IN_PROGRESS | 0 |
 | 👀 VERIFY | 0 |
 | ⬜ TODO | 0 |
@@ -25,7 +25,7 @@
 | ❌ CANCELLED | 0 |
 | Completion | 100% |
 
-_Last recount: 2026-08-23 (PROGRAM COMPLETE: all 90 tasks done+verified across 6 rounds; convergence memo independently verified PASS; awaiting PM go/no-go on After-Rebrand implementation)_
+_Last recount: 2026-08-23 (PROGRAM COMPLETE: all 91 tasks done+verified across 6 rounds; convergence memo independently verified PASS; awaiting PM go/no-go on After-Rebrand implementation)_
 
 ---
 
@@ -35,8 +35,8 @@ _Last recount: 2026-08-23 (PROGRAM COMPLETE: all 90 tasks done+verified across 6
 
 | Metric       | Value |
 | ------------ | ----- |
-| Total tasks  | 90    |
-| ✅ DONE      | 90    |
+| Total tasks | 91 |
+| ✅ DONE | 91 |
 | 🔶 IN_PROGRESS | 0   |
 | 👀 VERIFY    | 0     |
 | ⬜ TODO      | 0     |
@@ -294,6 +294,7 @@ Round 6 COMPLETE — 4 targeted reports + 5 verify passes + convergence memo →
 | R6-V7 | Synthesis consistency (4 docs) — internal arithmetic reproduced, 0 conclusion-affecting failures               | ✅ DONE   | `verify/r6-v7-synthesis-consistency.md`             |
 | R6-V8 | Closure addendum independent verification — 88 checks, 0 FAILED                                                | ✅ DONE   | `verify/r6-v8-closure-addendum-independent-verification.md` |
 | R6-V9 | Convergence memo verification — 37 checks, 0 FAILED, 6 MINOR; both headline assertions confirmed              | ✅ DONE   | `verify/r6-v9-convergence-memo-verification.md`     |
+| R6-V10 | Notes-final completeness audit — 17/17 notes verbatim from r4+r5 sources, 0 duplicates/omissions              | ✅ DONE   | `verify/final-notes-completeness-audit.md`          |
 
 ---
 
@@ -434,6 +435,7 @@ Round 6 COMPLETE — 4 targeted reports + 5 verify passes + convergence memo →
 | 6     | V7   | 4 docs checked | 1 consistency pass | exec-summary, integration-map, risk-register, phased-roadmap | 0 | PASS (0 conclusion-affecting failures) |
 | 6     | V8   | 88 checks | 1 independent verify | closure addendum (88 checks) | 0 | PASS |
 | 6     | V9   | 37 checks | 1 verify pass | convergence memo (37 checks, both headline assertions confirmed) | 0 | PASS |
+| 6     | V10   | 17 notes   | 1 verify pass | cross-project-notes-final completeness audit (17/17 notes, 0 dupes) | 0 | PASS |
 
 ---
 
