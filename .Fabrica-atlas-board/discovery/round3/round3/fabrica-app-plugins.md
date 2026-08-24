@@ -79,6 +79,9 @@ userData/plugins/<publisher>.<id>/current (pointer <=128B); .../<hash>/ immutabl
 == KEY INVARIANTS ==
 No script execution during install (copy-only); installs land immutable hash-addressed behind atomic pointer swap with 1-step rollback; every plugin-callable boundary re-gates via the one pure shared gate; children untrusted structurally (zod both directions) and environmentally (allowlist env); panels are documents not browsing contexts (CSP-first shell + navigation containment + opaque origin + session bearer tokens); mutations audit-intent-before-handler; consent changes reconcile without rereading files; refresh transactions settle fully before client reads (waitForPluginRefreshSettlement loops until observed chain stops advancing).
 
+== SCAN COVERAGE STATEMENT ==
+Scanned: `Fabrica-app/src/shared/plugins/` and `Fabrica-app/src/main/plugins/` — manifest schema/validation, capability model + consent + gate, discovery, install pipeline (git/local/marketplace/bundled), out-of-process worker lifecycle/supervision/slot pool, panel bridge + sessions + navigation guard, host-call execution path, extension registry, events, audit log, dev watcher, housekeeping, kill list, trust/provenance model, on-disk data structures. Skipped: per-file line-by-line enumeration of test files; renderer-side panel mount internals (documented in fabrica-app-renderer.md). Note: `plugin-manifest-file.ts` resides under `main/plugins/` (not `shared/plugins/`). Sources unmodified (read-only pass).
+
 
 
 
