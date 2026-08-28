@@ -98,9 +98,12 @@ Before every dispatch the runtime checks ahead/behind drift vs remote (`getRemot
 
 ---
 
-## 6. Preamble System (system-prompt control)
+## 6. Preamble System (worker dispatch/operational prompt — NOT a model system prompt)
 
-This is Fabrica's existing **system-prompt control** plane — `preamble.ts` (`fabrica-app-discovery.md:244`).
+`preamble.ts` (`fabrica-app-discovery.md:244`) builds the **dispatch/operational prompt** injected into each worker at dispatch time. Important distinction:
+
+- This is a **harness brief** (CLI contract + task/drift/gate context), **not** a model *system prompt* (agent identity/behavior/persona). It tells the worker *how to operate the Fabrica CLI*, not *who it is*.
+- Fabrica today does **not** set a model-level system prompt per agent. That layer is what MC (`agents.json` → `instructions`) and buzz (`.persona.md`) provide, and what Intent B adds on top.
 
 Preamble contents, in order:
 1. **Header** — "You are a dispatched worker…"
@@ -114,7 +117,7 @@ Preamble contents, in order:
 4. **BASE DRIFT section** — git drift context.
 5. **TASK block** + resolved-gate context.
 
-**Enhancement target (Intent B):** adopt MC's preamble composition grammar — fence + SOP + restart-context (`mc-ai-providers.md:209`, `prompt-builder.ts:471-505`) and injection defenses against fence-escaping (`security.ts:71-83`).
+**Enhancement target (Intent B):** add a true system-prompt layer (agent instructions/persona, MC `agents.json` + buzz `.persona.md`), then compose it INTO the preamble using MC's grammar — fence + SOP + restart-context (`mc-ai-providers.md:209`, `prompt-builder.ts:471-505`) with injection defenses against fence-escaping (`security.ts:71-83`).
 
 ---
 
