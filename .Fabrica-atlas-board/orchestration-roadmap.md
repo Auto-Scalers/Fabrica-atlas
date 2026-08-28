@@ -1,6 +1,6 @@
 # Atlas Roadmap — After-Rebrand Transformation
 
-> **Workflow:** This file is the **draft / likes scratch space**. We drop ideas and things we like from MC/buzz here while discussing. Nothing here is validated or committed. When an idea is **validated**, it is moved into `system.md` (the authoritative reference for the orchestration system) — and removed from this draft list. `system.md` must NEVER contain unvalidated intents.
+> **Workflow:** This file is the **draft / likes scratch space**. We drop ideas and things we like from MC/buzz here while discussing. Nothing here is validated or committed. When an idea is **validated**, it is moved into `orchestration.md` (the authoritative reference for the orchestration system) — and removed from this draft list. `orchestration.md` must NEVER contain unvalidated intents.
 > _Source of truth for feature inventory: `discovery/Fabrica-features.md`, `discovery/mc-features.md`, `discovery/buzz-features.md`._
 
 ---
@@ -19,7 +19,7 @@ Fabrica should become an **agentic orchestration platform**: not just a terminal
 
 ## 2. Draft Ideas & Likes (working scratch — NOT validated)
 
-> _Everything below is under discussion. Items move to `system.md` only when validated._
+> _Everything below is under discussion. Items move to `orchestration.md` only when validated._
 
 ### Draft A — Orchestration System (3-tier)
 Adopt a clean hierarchy on top of the existing `runtime/orchestration/` engine:
@@ -51,9 +51,9 @@ Reference: `fabrica-app-discovery.md:230`, `mc-chainedispatch-reconciler.md:197`
 
 ---
 
-## 3. Validated → system.md (promotion log)
+## 3. Validated → orchestration.md (promotion log)
 
-| Date | Item | What moved to `system.md` |
+| Date | Item | What moved to `orchestration.md` |
 |---|---|---|
 | — | — | (empty — nothing validated yet) |
 

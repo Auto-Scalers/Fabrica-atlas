@@ -7,7 +7,7 @@
 1. **Define the vision** — PM describes what Fabrica should feel like, do, and become.
 2. **Map vision to components** — identify which Fabrica-app components need changes.
 3. **Map vision to MC/buzz features** — identify which mission-control and buzz features to integrate.
-4. **Populate the roadmap** — produce actionable implementation plan in atlas-roadmap.md.
+4. **Populate the roadmap** — produce actionable implementation plan in orchestration-roadmap.md.
 
 ## Rollup
 
