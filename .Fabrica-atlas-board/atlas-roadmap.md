@@ -19,6 +19,8 @@ Fabrica should become an **agentic orchestration platform**: not just a terminal
 
 ## 2. High-Level Intents
 
+> _STATUS: DISCUSSION ONLY. None of these are validated/committed yet — we are still discussing direction. The orchestration engine (§below) is the agreed first focus area; the system-prompt/agent-control angle is under active discussion, not decided._
+
 ### Intent A — Orchestration System (3-tier)
 Adopt a clean hierarchy on top of the existing `runtime/orchestration/` engine:
 - **Meta-Orchestrator** — top-level director. Owns program/run strategy, spawns and supervises Orchestrators, resolves cross-cutting decisions. (Fabrica today has `coordinator.ts` but no explicit meta tier — this is the new layer.)
@@ -27,12 +29,14 @@ Adopt a clean hierarchy on top of the existing `runtime/orchestration/` engine:
 
 Reference material: `fabrica-app-discovery.md:230` (orchestration engine), `mc-chainedispatch-reconciler.md:197` (event-sourced dispatch recommendation), `buzz-discovery.md:84` (relay as single orchestrator).
 
-### Intent B — System Prompt & Agent Control
-Make system-prompt control a first-class, UI-facing feature:
+### Intent B — System Prompt & Agent Control  _[UNDER DISCUSSION — not validated]_
+Proposed direction (to be confirmed): make system-prompt control a first-class, UI-facing feature:
 - Agent registry with editable `instructions` (= system prompt), capabilities, skill bindings — modeled on MC `agents.json` + `/crew/new` (`mc-ui-frontend.md:182`).
 - Persona packs (`.persona.md`: YAML + markdown system prompt), publishable/sharable — modeled on buzz (`buzz-discovery.md:229`).
 - Dispatch preamble builder that composes system prompt + context (drift guards, fence + SOP + restart-context grammar from MC `prompt-builder.ts:471-505`).
 - Injection defenses against fence-escaping (MC `security.ts:71-83`).
+
+_Note: we established Fabrica's current `preamble.ts` is a dispatch/operational prompt, NOT a model system prompt. Whether/how to add a true system-prompt layer is still being discussed._
 
 ### Intent C — Skills System Upgrade
 Enhance the skills layer to MC/buzz standard:
