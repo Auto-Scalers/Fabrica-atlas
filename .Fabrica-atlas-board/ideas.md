@@ -1,7 +1,20 @@
-# Orchestration — Ideas by Sub-System
+# Fabrica Transformation — Ideas by Focus System
 
-> **Scratch space.** Lists the orchestration **sub-system titles** (mirroring the index in `orchestration-system.md`). Under each, ideas/features pulled from the discovery + analysis files: `[Fabrica]` = what already exists (baseline to preserve), `[MC]`/`[buzz]` = adoptable reference designs. Nothing here is validated.
-> When an idea is **validated**, move it into `orchestration-system.md` and log it in §Promotion Log.
+> **Scratch space.** The After-Rebrand transformation now focuses on **9 systems** (not just orchestration). Each section lists that system's **sub-system titles** (mirroring the index in its `*-system.md` reference) with ideas pulled from the discovery + analysis files: `[Fabrica]` = what already exists (baseline to preserve), `[MC]`/`[buzz]` = adoptable reference designs. Nothing here is validated.
+> When an idea is **validated**, move it into the corresponding `*-system.md` and log it in §Promotion Log.
+
+## Focus Systems Index
+| # | System | Reference file |
+|---|---|---|
+| 1 | Orchestration | `orchestration-system.md` |
+| 2 | Project / Workspace model | `workspace-system.md` |
+| 3 | Tasks panel (GitHub/Jira) + Task Sources | `tasks-system.md` |
+| 4 | Agent Dashboard + map | `agent-dashboard-system.md` |
+| 5 | Search bar | `search-system.md` |
+| 6 | Integrations | `integrations-system.md` |
+| 7 | Automations | `automations-system.md` |
+| 8 | Stats & Usage | `stats-usage-system.md` |
+| 9 | Plugins | `plugins-system.md` |
 
 ---
 
@@ -188,9 +201,82 @@ Fabrica → an **agentic orchestration platform**: directs agents, with first-cl
 
 ---
 
-## Promotion Log (validated → `orchestration-system.md`)
+---
 
-| Date | Item | What moved to `orchestration-system.md` |
+## 2. Project / Workspace model (→ `workspace-system.md`)
+
+**Sub-systems:** Projects (sidebar) · Project Groups · Folder-Workspace · Worktrees · Kanban
+
+- **[Fabrica]** Sidebar tree `repos → project groups → worktrees/workspaces` with filters (sleeping, default-branch, automation-generated, CLI-created, detached-head); sort/group. — `fabrica-app-discovery.md:140`
+- **[Fabrica]** `project-groups/` nested-repo discovery/import; ~20 `WorktreeCard*` components; `WorkspaceKanbanDrawer`. — `Fabrica-features.md`
+- **[MC]** `projects.json` groups tasks/goals/milestones — pure JSON state, no git/repo binding. — `mc-features.md`
+- **[buzz]** Nostr `kind:30621` project (multi-repo grouping, NIP-MP), `kind:30617` repo announcement, branches-as-channels, NIP-OA owner attestation. — `buzz-discovery.md:94,122`
+- **[Idea]** Converge: keep Fabrica's nested-repo discovery; adopt buzz's identity-scoped, git/relay-native project model so projects carry owner attestation.
+
+## 3. Tasks panel (GitHub/Jira) + Task Sources (→ `tasks-system.md`)
+
+**Sub-systems:** Tasks page · Issue workspaces (Jira/Linear/GitHub/GitLab) · GitHub Projects V2 board · Task Sources · hosted-review
+
+- **[Fabrica]** `task page`; per-provider issue workspaces (Jira/Linear/GitHub/GitLab); GitHub Projects V2 board (29 components); deep Linear (~2,200 LOC) / Jira (~470 LOC); client roster of 7 providers; `gh` 28 IPC channels; task-source ingestion from onboarding/mobile. — `Fabrica-features.md`, `fa-runtime-structured-read.md`
+- **[MC]** Status Board Kanban (Not Started/In Progress/Done), Task Card w/ subtasks + `blockedBy[]`, Ventures/Goals/Brain-Dump triage. — `mc-features.md`
+- **[Idea]** Converge: port MC's Kanban + `blockedBy` dependency model and Ventures/Goals linking into Fabrica's board.
+
+## 4. Agent Dashboard + map (→ `agent-dashboard-system.md`)
+
+**Sub-systems:** Agent board · Map canvas · Agent status (hook push) · Detected agents
+
+- **[Fabrica]** `dashboard-popout` agent board/map canvas; 49+92 components; live hook status push to main + popout; snapshot IPC; store slices `agent-status`/`detected-agents`/`runtime-detected-agents`. — `fabrica-app-discovery.md`, `fa-agent-hooks-probes.md`
+- **[MC]** Command Center Dashboard crew-status 5-state pills (idle/on-track/dependencies/awaiting-decision/overloaded); Crew/Team workload pages. — `mc-features.md`
+- **[buzz]** Agent "card minting" (`MintedAgentCard`); `AgentPool` fixed slots + per-agent status. — `buzz-desktop.md`, `buzz-agent-crates.md`
+- **[Idea]** Converge: adopt MC 5-state workload pills + buzz card-mint/agent-pool visualization into the map canvas.
+
+## 5. Search bar (→ `search-system.md`)
+
+**Sub-systems:** Command palette (Cmd+J) · Code/text search · Quick Open · Right-sidebar search · AI Vault index
+
+- **[Fabrica]** Worktree Jump Palette (Cmd+J) merges 7 result families; bespoke fuzzy (no lib); stateless `rg --json` search (no persistent index); caps 1200/15s; Quick Open via `rg --files`; right-sidebar search UI; AI Vault parse cache. — `fa-command-palette-search.md`, `fa-search-indexing.md`
+- **[MC]** Ctrl+K global search dialog across tasks/projects/goals. — `mc-features.md`
+- **[buzz]** NIP-50 / Postgres FTS (tsvector + GIN, community-scoped). — `buzz-features.md`
+- **[Idea]** Converge: add a persistent index + semantic/LLM search; port buzz FTS for relay content.
+
+## 6. Integrations (→ `integrations-system.md`)
+
+**Sub-systems:** Integrations pane · Provider clients · Credential vault · Forge-provider abstraction
+
+- **[Fabrica]** `IntegrationsPane`; 7 providers (GitHub/GitLab/Jira/Linear/Azure/Bitbucket/Gitea); `linear` SDK + keychain; `jira` REST ADF; `gh` 28 channels; `source-control/` forge-provider hosted-review. — `Fabrica-features.md`, `fa-ipc-watchers.md`
+- **[MC]** Service Catalog (64 services, 16 categories), AES-256-GCM credential vault, adapter layer for provider sync. — `mc-service-catalog.md`, `mc-adapters-linelevel.md`
+- **[Idea]** Converge: port MC adapter pattern + encrypted vault; de-sprawl connectors behind a uniform provider interface.
+
+## 7. Automations (→ `automations-system.md`)
+
+**Sub-systems:** Automations page · External managers · Cron/schedule · Headless dispatch
+
+- **[Fabrica]** `automations` activeView; module = scheduled/triggered dispatch + headless + snapshot buffers; editor dialogs; `HermesCronOutputView`; runtime `listAutomations`/`runAutomationNow`. — `Fabrica-features.md`, `fabrica-app-discovery.md`
+- **[MC]** Workflow Engine: 4 run engines + `node-cron` scheduler, `decisions.json` approval gates, `maxParallelAgents`. — `mc-workflow-engine.md`
+- **[buzz]** YAML-as-Code Workflow: 4 triggers/7 actions, `evalexpr` conditions (100ms), UUID-token approvals, signed step traces. — `buzz-features.md`
+- **[Idea]** Converge: port MC scheduling + buzz YAML workflows + approval tokens into Fabrica automations.
+
+## 8. Stats & Usage (→ `stats-usage-system.md`)
+
+**Sub-systems:** Usage charts · Rate-limit service · Usage record contract
+
+- **[Fabrica]** Status-bar usage bars; 27 per-provider charts; `RateLimitService` polling 7 providers; provider-agnostic usage record contract (plugin-contributable). — `Fabrica-features.md`, `fa-ipc-watchers.md`
+- **[buzz]** Agent Turn Metrics `kind:44200` durable per-turn token usage; storage sweep; owner-scoped encrypted telemetry. — `buzz-features.md`
+- **[Idea]** Converge: add buzz per-turn metric durability + owner-scoped telemetry export to Fabrica's usage contract.
+
+## 9. Plugins (→ `plugins-system.md`)
+
+**Sub-systems:** Plugin runtime/worker · Marketplace · Kill list · Trust model · Panel bridge
+
+- **[Fabrica]** Out-of-process `child_process.fork` workers (zod protocol, timeouts, slot pool 5, `maxRestarts=3`); CSP panel bridge + admission budgets; `fabrica-marketplace.json` provenance; kill-list chokepoint; trust model official-only; audit log; dev watcher. — `fa-plugin-runtime.md`, `Fabrica-features.md`
+- **[MC]** (none — Skills Page only.) **[buzz]** (none — agent crates only.)
+- **[Idea]** Keep Fabrica's model as best-in-class; optionally port MC skills-as-artifacts + buzz agent-crate distribution into the marketplace.
+
+---
+
+## Promotion Log (validated → corresponding `*-system.md`)
+
+| Date | Item | What moved to |
 |---|---|---|
 | — | — | (empty — nothing validated yet) |
 

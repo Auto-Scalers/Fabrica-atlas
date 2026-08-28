@@ -1,4 +1,4 @@
-# Fabrica Orchestration System — Reference &amp; Study Doc
+# Fabrica Orchestration System — Reference &amp; Study Doc (Focus system #1)
 
 > *Primary transformation target. This document is the living reference for the orchestration system we are building on. It documents what Fabrica ALREADY has, the reference designs from MC/buzz, and the gaps toward our 3-tier vision (Meta-Orch → Orchestrator → Worker).*
 > *Sources: `discovery/fabrica-app-discovery.md`, `discovery/fabrica-app/*.md`, `discovery/mission-control/*.md`, `discovery/buzz-discovery.md`.*
@@ -17,7 +17,7 @@ It already provides: run/task/worker lifecycle, dispatch preambles , decision ga
 
 ## 1.1 Sub-Systems Covered (index)
 
-Each sub-system below is described in its own section. `orchestration-ideas.md` lists these same titles with idea buckets underneath.
+Each sub-system below is described in its own section. `ideas.md` (Focus system #1) lists these same titles with idea buckets underneath.
 
 
 | #   | Sub-System                                        | Section |
