@@ -102,8 +102,15 @@ Source: `lifecycle-reconciliation.ts` (347 ln). Verified behavior:
 ### 5.6 decision gates
 Created via `gateCreate` or `decision_gate` messages; **humans resolve via `gateResolve`** — coordinator never auto-resolves. Resolved-gate context injected into later preambles (`--- DECISION GATE RESOLVED ---`) (`:241`).
 
-### 5.7 federation sync
-Pull contiguous relay items (`orchestration.federationPull`, sequence must be `cursor+1`), parse + import with lifecycle effects, ack through checkpoints; push pending `to_worker` items when dispatch ready; peer-fingerprint change → `peer_changed` error (`:242`).
+### 5.7 federation sync (cross-environment dispatch)
+Source: `federation-sync.ts` (268 ln). Verified behavior (`syncFederatedDispatch`):
+
+- **Peer-fingerprint guard:** resolves the worker server for `environment_id` and throws `peer_changed` if `peerFingerprint` no longer matches the saved `peer_fingerprint` (`:54`). This is the cross-environment trust anchor.
+- **Contiguity:** `federationPull` returns items after `to_home_imported_sequence`; each item must have `sequence === cursor + 1` else `operation_unknown` (`:75`). Non-contiguous relay is rejected, not best-effort.
+- **Import + lifecycle mapping:** each relayed message is parsed (`parseRelayedMessage`) and stored via `importFederatedRelayItem`. Lifecycle is mapped by `parseFederatedLifecycle`: `heartbeat` → recorded; `worker_done` → validated (`taskId`/`dispatchId` match, `outcome` ∈ succeeded|failed) then stored as `worker_report`; mismatches → `rejected` (`task_dispatch_mismatch` / `invalid_payload`).
+- **Ack lease:** `acquireFederationAckLease` gates acknowledgement; after import, `orchestration.federationAck` acks `throughSequence` with idempotent `orchestrationRequestId` `relay_ack_<dispatchId>_<cursor>`, and `recordFederationAckCheckpoint` persists the checkpoint.
+- **Reverse push:** when the local `WorkerDispatch` state is `ready`, pending `to_worker` relay items are pushed via `orchestration.federationImport` (idempotent `relay_import_...`), then `acknowledgeFederationRelay`.
+- **Priority normalization:** relayed priority coerced to `high|urgent|normal` (`:171`).
 
 ### 5.8 drift-guarded dispatch (git layer)
 Before every dispatch the runtime checks ahead/behind drift vs remote (`getRemoteDrift` = `rev-list --left-right --count local...remote`, `repo.ts:540-562`) and injects drift subjects into worker preambles (`log --format=%s -n limit local..remote`, `:568-587`) (`fa-git-integration.md:142`, `:369`).
@@ -196,7 +203,7 @@ Preamble contents, in order (verified from `preamble.ts`):
 - [x] `coordinator.ts` tick internals — verified (§5.3): 2000ms poll, maxConcurrent 4, stale threshold 20, decompose not implemented, escalation→circuit breaker, gates never auto-resolved.
 - [x] `preamble.ts` — verified (§6): full template is terminal-text harness protocol, not a model system prompt.
 - [x] `lifecycle-reconciliation.ts` — verified (§5.5): pane-key authority, 11 rejection codes, worker_done payload contract, idempotency guard via `_FABRICALifecycleRejection`, heartbeat rejection/suppression.
-- [ ] Federation: `federationPull`/import effects mapping (`federation-sync.ts`).
+- [x] Federation: `federation-sync.ts` — verified (§5.7): peer-fingerprint guard, contiguity enforcement, lifecycle mapping, ack lease/checkpoints, reverse push.
 - [ ] MC `prompt-builder.ts` + `security.ts` — preamble grammar + injection defense to port (reference only).
 
 ---
