@@ -1,15 +1,15 @@
-# Fabrica Orchestration System — Reference & Study Doc
+# Fabrica Orchestration System — Reference &amp; Study Doc
 
-> _Primary transformation target. This document is the living reference for the orchestration system we are building on. It documents what Fabrica ALREADY has, the reference designs from MC/buzz, and the gaps toward our 3-tier vision (Meta-Orch → Orchestrator → Worker)._
-> _Sources: `discovery/fabrica-app-discovery.md`, `discovery/fabrica-app/*.md`, `discovery/mission-control/*.md`, `discovery/buzz-discovery.md`._
+> *Primary transformation target. This document is the living reference for the orchestration system we are building on. It documents what Fabrica ALREADY has, the reference designs from MC/buzz, and the gaps toward our 3-tier vision (Meta-Orch → Orchestrator → Worker).*
+> *Sources: `discovery/fabrica-app-discovery.md`, `discovery/fabrica-app/*.md`, `discovery/mission-control/*.md`, `discovery/buzz-discovery.md`.*
 
 ---
 
-## 1. Purpose & Scope
+## 1. Purpose &amp; Scope
 
 Fabrica's orchestration system is the engine that **directs AI agents** (Claude Code, Codex, OpenCode, Pi, ~15 more) running side-by-side in isolated git worktrees. It is the first and most heavily invested area of the After-Rebrand transformation.
 
-It already provides: run/task/worker lifecycle, dispatch preambles (system-prompt control), decision gates, federation sync, and an RPC surface. Our job is to (a) keep all of it, (b) add the **Meta-Orchestrator** tier, and (c) upgrade the agent/skill/persona model using MC + buzz as references.
+It already provides: run/task/worker lifecycle, dispatch preambles , decision gates, federation sync, and an RPC surface. Our job is to  upgrade the model using MC + buzz as references.
 
 **Hard constraint:** preserve every existing feature. Enhance/extend only (Fabrica-App Transformation Rule in `AGENTS.md`).
 
@@ -19,20 +19,22 @@ It already provides: run/task/worker lifecycle, dispatch preambles (system-promp
 
 Each sub-system below is described in its own section. `orchestration-ideas.md` lists these same titles with idea buckets underneath.
 
-| # | Sub-System | Section |
-|---|---|---|
-| 1 | Run (run-create) | §5.1 |
-| 2 | Task (task-create) | §5.2 |
-| 3 | Coordinator (auto-dispatch) | §5.3 |
-| 4 | Worker-start (explicit) | §5.4 |
-| 5 | worker_done settlement (lifecycle-reconciliation) | §5.5 |
-| 6 | Decision gates | §5.6 |
-| 7 | Federation sync (cross-environment) | §5.7 |
-| 8 | Drift-guarded dispatch (git layer) | §5.8 |
-| 9 | Preamble system | §6 |
-| 10 | RPC surface | §7 |
-| 11 | Integration points | §8 |
-| 12 | Reference designs (MC + buzz) | §9 |
+
+| #   | Sub-System                                        | Section |
+| --- | ------------------------------------------------- | ------- |
+| 1   | Run (run-create)                                  | §5.1    |
+| 2   | Task (task-create)                                | §5.2    |
+| 3   | Coordinator (auto-dispatch)                       | §5.3    |
+| 4   | Worker-start (explicit)                           | §5.4    |
+| 5   | worker_done settlement (lifecycle-reconciliation) | §5.5    |
+| 6   | Decision gates                                    | §5.6    |
+| 7   | Federation sync (cross-environment)               | §5.7    |
+| 8   | Drift-guarded dispatch (git layer)                | §5.8    |
+| 9   | Preamble system                                   | §6      |
+| 10  | RPC surface                                       | §7      |
+| 11  | Integration points                                | §8      |
+| 12  | Reference designs (MC + buzz)                     | §9      |
+
 
 ---
 
@@ -55,6 +57,7 @@ It is **in-process** (Electron main), not a separate daemon — but it already s
 Single SQLite file, hardened perms `0o600`, WAL + shm, `PRAGMA user_version` migrations with **version-skew defense**.
 
 Tables (`fabrica-app-discovery.md:246`):
+
 - `runs`, `tasks`, `dispatch_contexts`, `messages`, `deliveries`
 - `question_threads`, `decision_gates`
 - `coordinator_runs`
@@ -71,30 +74,35 @@ ID conventions: `run_` / `task_` / `ctx_` + hex; `owr1_` output cursors; `dcap_`
 
 ## 4. Data Model (durable rows)
 
-| Row | Key fields | Notes |
-|---|---|---|
-| **RunRow** | id, objective, home_database, coordinator_handle, coordinator_pane_key, consumer_generation, legacy | program/objective container |
-| **TaskRow** | id, run_id, parent_id, created_by_*, task_title, display_name, spec, status(pending\|ready\|dispatched\|completed\|failed\|blocked), deps(JSON), result | DAG via parent/deps |
-| **DispatchContextRow** | id, run_id, task_id, contract_version, launch_token_hash, assignee_handle/pane_key, capability_hash, process_incarnation, status(pending\|dispatched\|completed\|failed\|circuit_broken), failure_count, last_heartbeat_at | binds task↔worker |
-| **MessageRow** | type: status\|dispatch\|worker_done\|merge_ready\|escalation\|handoff\|decision_gate\|question\|heartbeat; priority normal\|high\|urgent | typed stream |
-| **DecisionGateRow** | — | human-in-the-loop block |
-| **QuestionRow** | — | durable blocking question |
-| **WorkerDispatchRow** | state: starting→ready→succeeded/failed/stopping/stopped/start_unknown/stop_unknown/abandoned | worker lifecycle FSM |
-| **WorkerTerminalResourceRow** | ownership_state owned\|transferred\|user_owned\|external\|released; release_state machine | terminal ownership |
-| **FederatedDispatchRow / RemoteDispatchAttachmentRow / FederationRelayItemRow** | — | cross-environment dispatch |
-| **MutationReceiptRow** | (callerFingerprint, requestId) ledger | idempotency |
+
+| Row                                                                             | Key fields                                                                                                                                                                                                             | Notes                       |
+| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| **RunRow**                                                                      | id, objective, home_database, coordinator_handle, coordinator_pane_key, consumer_generation, legacy                                                                                                                    | program/objective container |
+| **TaskRow**                                                                     | id, run_id, parent_id, created_by_*, task_title, display_name, spec, status(pending|ready|dispatched|completed|failed|blocked), deps(JSON), result                                                                     | DAG via parent/deps         |
+| **DispatchContextRow**                                                          | id, run_id, task_id, contract_version, launch_token_hash, assignee_handle/pane_key, capability_hash, process_incarnation, status(pending|dispatched|completed|failed|circuit_broken), failure_count, last_heartbeat_at | binds task↔worker           |
+| **MessageRow**                                                                  | type: status|dispatch|worker_done|merge_ready|escalation|handoff|decision_gate|question|heartbeat; priority normal|high|urgent                                                                                         | typed stream                |
+| **DecisionGateRow**                                                             | —                                                                                                                                                                                                                      | human-in-the-loop block     |
+| **QuestionRow**                                                                 | —                                                                                                                                                                                                                      | durable blocking question   |
+| **WorkerDispatchRow**                                                           | state: starting→ready→succeeded/failed/stopping/stopped/start_unknown/stop_unknown/abandoned                                                                                                                           | worker lifecycle FSM        |
+| **WorkerTerminalResourceRow**                                                   | ownership_state owned|transferred|user_owned|external|released; release_state machine                                                                                                                                  | terminal ownership          |
+| **FederatedDispatchRow / RemoteDispatchAttachmentRow / FederationRelayItemRow** | —                                                                                                                                                                                                                      | cross-environment dispatch  |
+| **MutationReceiptRow**                                                          | (callerFingerprint, requestId) ledger                                                                                                                                                                                  | idempotency                 |
+
 
 ---
 
 ## 5. Lifecycle Flows
 
 ### 5.1 run-create
+
 `BEGIN IMMEDIATE` tx → unbind other runs on same pane → insert `run_<hex>`, `generation=1`. `bindRun` supports a legacy-authority proof path (`fabrica-app-discovery.md:236`).
 
 ### 5.2 task-create
+
 Validates same-run `parentId`/deps → `pending` if deps unmet, else `ready` (`:237`).
 
 ### 5.3 coordinator auto-dispatch (tick, default 2000ms)
+
 Source: `coordinator.ts` (555 ln). Verified constants: `DEFAULT_POLL_MS = 2000`, `MAX_CONCURRENT_DEFAULT = 4`, `HUNG_THRESHOLD_MS = 10 min` (2× heartbeat cadence), `DISPATCH_STALE_THRESHOLD = 20` commits behind.
 
 `tick()` order (`:209`): `processMessages` → `processEscalations` → `processDecisionGates` → `warnStaleDispatches` → `dispatchReadyTasks` → `checkConvergence`.
@@ -108,9 +116,11 @@ Source: `coordinator.ts` (555 ln). Verified constants: `DEFAULT_POLL_MS = 2000`,
 - **Convergence:** run ends when all tasks `completed|failed`; early `stop()` → run marked `failed`. Stuck detection: no active tasks but some `blocked` → logs "Stuck" (`:541`).
 
 ### 5.4 worker-start (explicit)
+
 Mutation-receipt dedupe by `(callerFingerprint, requestId)`; retry requires prior dispatch `failed/stopped/abandoned`; inserts `dispatch_contexts(pending)` + `worker_dispatches(starting)`. Setup completion detected via stdout marker `__FABRICA_SETUP_COMPLETE__:<token>:<exitCode>` (`:238`).
 
 ### 5.5 worker_done settlement (`lifecycle-reconciliation.ts`)
+
 Source: `lifecycle-reconciliation.ts` (347 ln). Verified behavior:
 
 - **Authority (`hasLifecycleAuthority`):** if the dispatch row has an `assignee_pane_key`, the sender's `sender_pane_key` must match (leaf-id equivalence via `parsePaneKey`; tab half may change on break-out). Legacy rows with no pane key fall back to exact `assignee_handle` equality. **Payload knowledge alone is NEVER authority** (`:26`).
@@ -121,9 +131,11 @@ Source: `lifecycle-reconciliation.ts` (347 ln). Verified behavior:
 - **Post-settlement:** `suppressEarlierHeartbeats` marks earlier heartbeats for the same `dispatchId` as read+delivered so they don't mask a newer dispatch.
 
 ### 5.6 decision gates
+
 Created via `gateCreate` or `decision_gate` messages; **humans resolve via `gateResolve`** — coordinator never auto-resolves. Resolved-gate context injected into later preambles (`--- DECISION GATE RESOLVED ---`) (`:241`).
 
 ### 5.7 federation sync (cross-environment dispatch)
+
 Source: `federation-sync.ts` (268 ln). Verified behavior (`syncFederatedDispatch`):
 
 - **Peer-fingerprint guard:** resolves the worker server for `environment_id` and throws `peer_changed` if `peerFingerprint` no longer matches the saved `peer_fingerprint` (`:54`). This is the cross-environment trust anchor.
@@ -134,6 +146,7 @@ Source: `federation-sync.ts` (268 ln). Verified behavior (`syncFederatedDispatch
 - **Priority normalization:** relayed priority coerced to `high|urgent|normal` (`:171`).
 
 ### 5.8 drift-guarded dispatch (git layer)
+
 Before every dispatch the runtime checks ahead/behind drift vs remote (`getRemoteDrift` = `rev-list --left-right --count local...remote`, `repo.ts:540-562`) and injects drift subjects into worker preambles (`log --format=%s -n limit local..remote`, `:568-587`) (`fa-git-integration.md:142`, `:369`).
 
 ---
@@ -146,13 +159,14 @@ Before every dispatch the runtime checks ahead/behind drift vs remote (`getRemot
 - Fabrica today does **not** set a model-level system prompt per agent. That layer is what MC (`agents.json` → `instructions`) and buzz (`.persona.md`) provide, and what Intent B adds on top.
 
 Preamble contents, in order (verified from `preamble.ts`):
+
 1. **Header** — opens: *"You are working inside FABRICA, a multi-agent IDE. You are a dispatched worker."* States coordinator handle + task ID, and that the worker talks to the coordinator **only** through the CLI commands below (not Slack/GitHub/etc.).
 2. **CLI COMMANDS block** (`=== CLI COMMANDS ===`) — the `fabrica` (or `FABRICA-dev` in dev mode) CLI contract:
-   - `send --type worker_done` **exactly once** with `--body` = 3-sentence executive summary + `--files-modified` + optional `--report-path`. Must include BOTH `taskId` and `dispatchId`.
-   - `heartbeat` every **5 min** (`HEARTBEAT_INTERVAL_MIN`) with `--phase investigating|implementing|reviewing|waiting`. Must include `taskId` + `dispatchId` (attributes liveness to the specific dispatch, not just the task).
-   - `ask` for durable blocking questions — **NEVER `AskUserQuestion`** (opens a local TUI the coordinator can't see → session hangs). `ask` durably records the question and blocks until reply.
-   - `escalation` for pre-completion blockers.
-   - `check --terminal` to read coordinator messages.
+  - `send --type worker_done` **exactly once** with `--body` = 3-sentence executive summary + `--files-modified` + optional `--report-path`. Must include BOTH `taskId` and `dispatchId`.
+  - `heartbeat` every **5 min** (`HEARTBEAT_INTERVAL_MIN`) with `--phase investigating|implementing|reviewing|waiting`. Must include `taskId` + `dispatchId` (attributes liveness to the specific dispatch, not just the task).
+  - `ask` for durable blocking questions — **NEVER `AskUserQuestion`** (opens a local TUI the coordinator can't see → session hangs). `ask` durably records the question and blocks until reply.
+  - `escalation` for pre-completion blockers.
+  - `check --terminal` to read coordinator messages.
 3. **After-worker_done behavior** by `workerKind` — `bare-shell` exits; `prompt-returning-agent` returns to idle prompt (stays available for re-dispatch with a fresh preamble+TASK block).
 4. **BASE DRIFT section** (`--- BASE DRIFT ---`) — emitted only when `baseDrift.behind > 0`; lists the N most recent commit subjects on the base NOT in the worktree. Defense-in-depth so the worker sees staleness up front.
 5. **TASK block** (`=== TASK ===`) — the `taskSpec` (with `allow-stale-base: true` stripped so the worker can't read it as instruction). Resolved decision-gate context is appended here.
@@ -167,6 +181,7 @@ Preamble contents, in order (verified from `preamble.ts`):
 `send / check / reply / inbox / task* / dispatch* / ask / reset / runCreate / runUse / gateCreate / gateResolve / workerStart / Show / Read / Stop / Release / Abandon / federationAttachStart / federationPull / Ack / Import / Show / Read / Stop`
 
 **Plumbing/envelope** (`fabrica-app-discovery.md:262`):
+
 - Envelope `{id, authToken, method, params?, orchestrationCapability?, orchestrationContractVersion?, orchestrationRequestId?}`.
 - **Contract fence** before every orchestration mutation: missing/mismatched `orchestrationContractVersion` or retired method → `orchestration_migration_required`, **zero effects**.
 - Capabilities negotiated at auth, bound to socket (never request-asserted).
@@ -177,67 +192,22 @@ Preamble contents, in order (verified from `preamble.ts`):
 
 ## 8. Integration Points (`fa-runtime-structured-read.md:131`)
 
-| Subsystem | Relationship |
-|---|---|
-| App bootstrap | instantiated once at `index.ts:2486` |
-| IPC handlers | `ipc/runtime.ts`, `ipc/pty.ts`, `ipc/worktrees.ts`, `ipc/ssh.ts`… all receive the service |
-| Runtime RPC | `FABRICARuntimeRpcServer` holds it; methods in `runtime/rpc/methods/orchestration*` |
-| Plugin host | narrowed facade — only `resolveActiveWorktreeContext`, `listTerminals` (capped), `sendTerminal`, `dispatchPluginNotification` |
-| PTY plane | bidirectional; provider injected at constructor; data via `onPtyData`/`acceptPtyDataBounded` |
-| Agent-hooks server | `onTerminalAgentStatus` → `agentHookServer.ingestTerminalStatus`; hook env keys injected into spawned agents |
-| SSH relay / remote | consumed by + notifies; SSH attachment authority |
-| Window / renderer | pushes graphs via `syncWindowGraph`, `pty:sideEffect` |
-| Daemon headless | supported throughout (headless emulation, orphan adoption, restore tails) |
+
+| Subsystem          | Relationship                                                                                                                  |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| App bootstrap      | instantiated once at `index.ts:2486`                                                                                          |
+| IPC handlers       | `ipc/runtime.ts`, `ipc/pty.ts`, `ipc/worktrees.ts`, `ipc/ssh.ts`… all receive the service                                     |
+| Runtime RPC        | `FABRICARuntimeRpcServer` holds it; methods in `runtime/rpc/methods/orchestration*`                                           |
+| Plugin host        | narrowed facade — only `resolveActiveWorktreeContext`, `listTerminals` (capped), `sendTerminal`, `dispatchPluginNotification` |
+| PTY plane          | bidirectional; provider injected at constructor; data via `onPtyData`/`acceptPtyDataBounded`                                  |
+| Agent-hooks server | `onTerminalAgentStatus` → `agentHookServer.ingestTerminalStatus`; hook env keys injected into spawned agents                  |
+| SSH relay / remote | consumed by + notifies; SSH attachment authority                                                                              |
+| Window / renderer  | pushes graphs via `syncWindowGraph`, `pty:sideEffect`                                                                         |
+| Daemon headless    | supported throughout (headless emulation, orphan adoption, restore tails)                                                     |
+
 
 **Trust-grant orchestration** (`fabrica-app-main-subsystems.md:89`): `grantManagedCodexHookTrust(plan)` — never throws; returns `{lane:'rpc', entries}` or fallback. Env kill-switch → fallback; ledger hit → skip RPC; 5-min per-host cooldown; restores exact pre-session bytes on failure. This is the pattern for safe agent-hook trust we keep.
 
 ---
 
-## 9. Reference Designs (MC + buzz)
-
-### 9.1 Mission Control — `mc-chainedispatch-reconciler.md`
-- A "mission" (`ProjectRun`) is a **file-persisted batch execution context**; **no central orchestrator process** — three actors cooperate through shared JSON (`missions.json`, `active-runs.json`, `tasks.json`, `decisions.json`).
-- **Recommendation (`:197`):** the durable-ledger + relay-handoff + poll-driven-reconciler + layered-retry architecture is a strong skeleton; biggest upgrade = **centralize the dispatch predicate and make state transitions event-sourced** so the three roles become views over one log.
-- Fix list (`:190-196`): extract ONE shared scheduler; single-writer discipline / append-only event log; PID+start-time liveness; atomic tmp+rename writes; reaper for zombie `running` rows; persisted overflow queue.
-
-### 9.1.1 Mission Control — `prompt-builder.ts` + `security.ts` (persona / system-prompt layer)
-MC's prompt builder is the **persona/system-prompt** counterpart that Fabrica's operational-only preamble (§6) deliberately omits. Verified from `_sources/mission-control/.../scripts/daemon/`:
-
-- **`buildTaskPrompt` (`prompt-builder.ts:471`):** composes `persona` (agent `instructions` from `agents.json`) + linked `skills` content + **fenced task data** + SOP + optional Field-Ops / restart / retry context, then `enforcePromptLimit`. This is a true agent-identity + behavior prompt.
-- **`buildAgentPersona` (`:83`):** `You are acting as a <name> — <description>.` + `## Your Instructions` + `## Your Capabilities` + `## Your Skills`. Maps directly to the "system prompt" concept.
-- **`buildSOP` (`:167`):** hard rules — read `ai-context.md`, check inbox `to: <agentId>`, never do bookkeeping yourself (system auto-marks done), update subtasks immediately.
-- **Restart/Retry context (`:217`,`:269`):** injects prior mission history and **user decision guidance** (`decisions.json`) so retried tasks take a different approach — a model for gate-resolution injection.
-- **Injection defense (`security.ts`):** `fenceTaskData` wraps task data in `<task-context>…</task-context>` and `escapeFenceContent` neutralizes injected `</task-context>` breakouts (`:71-83`); `enforcePromptLimit` caps at **100KB** (`:65,88`); `scrubCredentials` redacts API keys / bearer / AWS / GitHub / npm / Slack / Stripe / Anthropic / SSH / DB-URLs (`:5-46`); `validateBinary` allows only `claude*` (`:97`); `buildSafeEnv` passes a minimal env (PATH/HOME/TEMP + Windows system vars) and explicitly forwards `CLAUDE_CODE_OAUTH_TOKEN`, stripping all other secrets (`:114`).
-
-**Bridge fact (not an intent):** Fabrica's preamble is operational-only; MC's persona builder is the reference for the missing *system-prompt* layer. Porting `fenceTaskData` / `escapeFenceContent` / `enforcePromptLimit` / `scrubCredentials` into Fabrica's preamble builder is the concrete, low-risk convergence path.
-
-### 9.2 Buzz — `buzz-discovery.md:84`
-- `buzz-relay` is "the only orchestrator; subsystems never call each other" (crate dependency principle).
-- Agent identity/persona is **relay-owned**; same idea as Fabrica's dispatch authority but portable across environments.
-
-### 9.3 Agent / system-prompt models observed in reference codebases
-- **MC:** `agents.json` stores `instructions` (= system prompt) per agent; `/crew/new` builds agents with a system-prompt editor + capabilities + skillIds (`mc-ui-frontend.md:182`, `mc-features.md:126`).
-- **buzz:** `.persona.md` = YAML frontmatter + markdown system prompt, publishable as Nostr kind:30175 (`buzz-discovery.md:229`, `:305`).
-
----
-
-## 10. Risks (`fa-runtime-structured-read.md:156`)
-
-1. **God-object** — 32.6K-line `fabrica-runtime.ts` holds live graph + PTY + waiters + floor state + worktree reconciliation; lifecycle changes risk cross-domain regressions.
-2. **Connector sprawl** — ~4,900 ln GitHub/GitLab/Linear/Jira inlined (not adapter-separated like MC).
-3. **Electron coupling in hot path** — `BrowserWindow` accessed for authoritative-window decisions inside the same object serving headless clients.
-4. **Bespoke concurrency fences** — 11 ad-hoc FSMs, no shared framework.
-5. **Single-instance coupling** — construction needs store + stats + signer triplet; profile-scoped userData.
-
----
-
-## 11. Open Study Questions (next reads)
-- [x] `coordinator.ts` tick internals — verified (§5.3): 2000ms poll, maxConcurrent 4, stale threshold 20, decompose not implemented, escalation→circuit breaker, gates never auto-resolved.
-- [x] `preamble.ts` — verified (§6): full template is terminal-text harness protocol, not a model system prompt.
-- [x] `lifecycle-reconciliation.ts` — verified (§5.5): pane-key authority, 11 rejection codes, worker_done payload contract, idempotency guard via `_FABRICALifecycleRejection`, heartbeat rejection/suppression.
-- [x] Federation: `federation-sync.ts` — verified (§5.7): peer-fingerprint guard, contiguity enforcement, lifecycle mapping, ack lease/checkpoints, reverse push.
-- [x] MC `prompt-builder.ts` + `security.ts` — documented (§9.1.1): persona/system-prompt builder, fence+escape+limit+scrub injection defense (reference for converging Fabrica's preamble).
-
----
-
-_Last updated: 2026-08-28 (session 2 — verified coordinator.ts, preamble.ts, lifecycle-reconciliation.ts, federation-sync.ts, MC prompt-builder.ts + security.ts from source)_
+*Last updated: 2026-08-28 (session 2 — verified coordinator.ts, preamble.ts, lifecycle-reconciliation.ts, federation-sync.ts, MC prompt-builder.ts + security.ts from source)*
