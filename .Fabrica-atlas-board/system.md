@@ -74,10 +74,17 @@ ID conventions: `run_` / `task_` / `ctx_` + hex; `owr1_` output cursors; `dcap_`
 Validates same-run `parentId`/deps → `pending` if deps unmet, else `ready` (`:237`).
 
 ### 5.3 coordinator auto-dispatch (tick, default 2000ms)
-`processMessages` → decision-gate invariant → stale-dispatch warnings (10-min heartbeat threshold) → `dispatchReadyTasks` where `slots = maxConcurrent − dispatched` (default **4**) (`:239`):
-- **Worktree drift probe:** refuses dispatch if worktree is >20 commits behind remote unless `allow-stale-base` is in spec.
-- Dispatch = `createDispatchContext` (handle **AND** pane-key locks; circuit-breaker budget from prior failures) → preamble sent via `sendTerminalAgentPrompt`.
-- Failures increment `failure_count` → `circuit_broken` at threshold.
+Source: `coordinator.ts` (555 ln). Verified constants: `DEFAULT_POLL_MS = 2000`, `MAX_CONCURRENT_DEFAULT = 4`, `HUNG_THRESHOLD_MS = 10 min` (2× heartbeat cadence), `DISPATCH_STALE_THRESHOLD = 20` commits behind.
+
+`tick()` order (`:209`): `processMessages` → `processEscalations` → `processDecisionGates` → `warnStaleDispatches` → `dispatchReadyTasks` → `checkConvergence`.
+
+- **decompose() is NOT implemented** (`:196`): tasks must be pre-created via `taskCreate` before `run()`; AI-driven decomposition is a stated future phase. The coordinator operates on an existing DAG only.
+- **Terminal creation:** at most **one** terminal spawned per tick (`:373`); reused if an available writable+connected terminal exists.
+- **Drift probe:** `probeWorktreeDrift` runs once per tick against the worktree's tracking remote (`:387`); same base snapshot shared by all dispatches that tick. Refuses dispatch if `behind > 20` commits unless `allow-stale-base: true` appears in the spec (`:425`). Refusal is a **silent return** (task stays `ready`, retries next tick) — it does NOT call `failDispatch`, so it never burns the circuit-breaker budget.
+- **Dispatch** = `createDispatchContext(handle, paneKey, launchTokenHash, processIncarnation)` (`:444`) → `buildDispatchPreamble(...)` → `sendTerminalAgentPrompt(handle, preamble + gateContext)` (`:477`).
+- **Escalation** → `failDispatch`; at `circuit_broken` the task is marked `failed`; otherwise it returns to `pending` for retry (failure_count/3, `:306`).
+- **Decision gates:** coordinator **never auto-resolves** (`:347`) — `processDecisionGates` re-blocks any task whose gate exists but isn't blocked, restoring the invariant. A resolved gate's outcome is injected into the preamble as `--- DECISION GATE RESOLVED ---` (`:473`).
+- **Convergence:** run ends when all tasks `completed|failed`; early `stop()` → run marked `failed`. Stuck detection: no active tasks but some `blocked` → logs "Stuck" (`:541`).
 
 ### 5.4 worker-start (explicit)
 Mutation-receipt dedupe by `(callerFingerprint, requestId)`; retry requires prior dispatch `failed/stopped/abandoned`; inserts `dispatch_contexts(pending)` + `worker_dispatches(starting)`. Setup completion detected via stdout marker `__FABRICA_SETUP_COMPLETE__:<token>:<exitCode>` (`:238`).
@@ -105,17 +112,19 @@ Before every dispatch the runtime checks ahead/behind drift vs remote (`getRemot
 - This is a **harness brief** (CLI contract + task/drift/gate context), **not** a model *system prompt* (agent identity/behavior/persona). It tells the worker *how to operate the Fabrica CLI*, not *who it is*.
 - Fabrica today does **not** set a model-level system prompt per agent. That layer is what MC (`agents.json` → `instructions`) and buzz (`.persona.md`) provide, and what Intent B adds on top.
 
-Preamble contents, in order:
-1. **Header** — "You are a dispatched worker…"
-2. **CLI COMMANDS block** — `fabrica` CLI contract:
-   - `send --type worker_done` **exactly once** with 3-sentence executive summary + files-modified
-   - `heartbeat` every 5 min with phase `investigating|implementing|reviewing|waiting`
-   - `ask` for durable blocking questions (`AskUserQuestion` forbidden)
-   - `escalation`
-   - `check --terminal`
-3. **After-worker_done behavior** by `workerKind` — bare-shell exits; prompt-returning agents idle for possible re-dispatch.
-4. **BASE DRIFT section** — git drift context.
-5. **TASK block** + resolved-gate context.
+Preamble contents, in order (verified from `preamble.ts`):
+1. **Header** — opens: *"You are working inside FABRICA, a multi-agent IDE. You are a dispatched worker."* States coordinator handle + task ID, and that the worker talks to the coordinator **only** through the CLI commands below (not Slack/GitHub/etc.).
+2. **CLI COMMANDS block** (`=== CLI COMMANDS ===`) — the `fabrica` (or `FABRICA-dev` in dev mode) CLI contract:
+   - `send --type worker_done` **exactly once** with `--body` = 3-sentence executive summary + `--files-modified` + optional `--report-path`. Must include BOTH `taskId` and `dispatchId`.
+   - `heartbeat` every **5 min** (`HEARTBEAT_INTERVAL_MIN`) with `--phase investigating|implementing|reviewing|waiting`. Must include `taskId` + `dispatchId` (attributes liveness to the specific dispatch, not just the task).
+   - `ask` for durable blocking questions — **NEVER `AskUserQuestion`** (opens a local TUI the coordinator can't see → session hangs). `ask` durably records the question and blocks until reply.
+   - `escalation` for pre-completion blockers.
+   - `check --terminal` to read coordinator messages.
+3. **After-worker_done behavior** by `workerKind` — `bare-shell` exits; `prompt-returning-agent` returns to idle prompt (stays available for re-dispatch with a fresh preamble+TASK block).
+4. **BASE DRIFT section** (`--- BASE DRIFT ---`) — emitted only when `baseDrift.behind > 0`; lists the N most recent commit subjects on the base NOT in the worktree. Defense-in-depth so the worker sees staleness up front.
+5. **TASK block** (`=== TASK ===`) — the `taskSpec` (with `allow-stale-base: true` stripped so the worker can't read it as instruction). Resolved decision-gate context is appended here.
+
+**Key fact:** the entire preamble is a single string written into the terminal as the worker's opening input. It is harness/operational protocol (how to use the FABRICA CLI), **not** a model `system` role. There is no separate system-prompt channel in this code path.
 
 ---
 
@@ -179,11 +188,11 @@ Preamble contents, in order:
 ---
 
 ## 11. Open Study Questions (next reads)
-- [ ] `coordinator.ts` tick internals — exact slot/drift/circuit-breaker math.
-- [ ] `preamble.ts` — full template + how drift/gate context is injected.
-- [ ] `lifecycle-reconciliation.ts` — authority + idempotency edge cases.
-- [ ] Federation: `federationPull`/import effects mapping.
-- [ ] MC `prompt-builder.ts` + `security.ts` — preamble grammar + injection defense to port.
+- [x] `coordinator.ts` tick internals — verified (§5.3): 2000ms poll, maxConcurrent 4, stale threshold 20, decompose not implemented, escalation→circuit breaker, gates never auto-resolved.
+- [x] `preamble.ts` — verified (§6): full template is terminal-text harness protocol, not a model system prompt.
+- [ ] `lifecycle-reconciliation.ts` — authority + idempotency edge cases (settleWorkerReport: only assigned pane-key may settle; duplicate/staleness detection).
+- [ ] Federation: `federationPull`/import effects mapping (`federation-sync.ts`).
+- [ ] MC `prompt-builder.ts` + `security.ts` — preamble grammar + injection defense to port (reference only).
 
 ---
 
