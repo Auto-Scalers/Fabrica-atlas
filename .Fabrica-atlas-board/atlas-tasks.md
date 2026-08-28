@@ -580,6 +580,7 @@ _Last updated: 2026-08-23_
 | Reorganize verify/ folder | DONE | Files organized into round3/, round4/, round5/, round6/ subfolders |
 | Reorganize analysis/ folder | DONE | Already organized, no changes needed |
 | Reorganize discovery/round3 and round4 | DONE | Files organized into buzz/, fabrica-app/, mission-control/ subfolders |
+| Delete verify/ folder | DONE | Historical verification passes removed (not needed) |
 
 ### Status: Awaiting PM Vision
 
