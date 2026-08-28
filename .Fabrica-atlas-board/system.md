@@ -117,10 +117,6 @@ Preamble contents, in order:
 4. **BASE DRIFT section** — git drift context.
 5. **TASK block** + resolved-gate context.
 
-**Enhancement target (Intent B):** add a true system-prompt layer (agent instructions/persona, MC `agents.json` + buzz `.persona.md`), then compose it INTO the preamble using MC's grammar — fence + SOP + restart-context (`mc-ai-providers.md:209`, `prompt-builder.ts:471-505`) with injection defenses against fence-escaping (`security.ts:71-83`).
-
-**Proposed mechanism (UNDER DISCUSSION — not validated):** implement the system prompt by prepending it to the start of the dispatch/terminal text (the preamble already injected via `sendTerminalAgentPrompt`). Rationale: minimal change, reuses existing injection path; most CLI agents treat the opening terminal text as their behavior brief. Tradeoffs: terminal text is conversation, not a true model `system` role — weaker than a dedicated agent `--system-prompt`/`-append-system-prompt` flag where one exists; requires delimiter/fence injection defense so task content can't override the directive. Compose using MC's fence + SOP + restart-context grammar for stability across reconnects.
-
 ---
 
 ## 7. RPC Surface
@@ -166,23 +162,13 @@ Preamble contents, in order:
 - `buzz-relay` is "the only orchestrator; subsystems never call each other" (crate dependency principle).
 - Agent identity/persona is **relay-owned**; same idea as Fabrica's dispatch authority but portable across environments.
 
-### 9.3 Agent / system-prompt models to adopt
+### 9.3 Agent / system-prompt models observed in reference codebases
 - **MC:** `agents.json` stores `instructions` (= system prompt) per agent; `/crew/new` builds agents with a system-prompt editor + capabilities + skillIds (`mc-ui-frontend.md:182`, `mc-features.md:126`).
 - **buzz:** `.persona.md` = YAML frontmatter + markdown system prompt, publishable as Nostr kind:30175 (`buzz-discovery.md:229`, `:305`).
 
 ---
 
-## 10. Gaps vs Our 3-Tier Vision
-
-| Tier | Exists today | Gap |
-|---|---|---|
-| **Worker** | `worker-start`, preamble, `worker_done`, lifecycle FSM, terminal archival | Most complete tier — keep |
-| **Orchestrator** | `coordinator.ts` tick loop, DAG dispatch, decision gates, federation | Single in-process loop; no per-domain separation |
-| **Meta-Orchestrator** | ❌ none | **NEW** — owns program strategy across runs; reference = MC event-sourced dispatch (§9.1) |
-
----
-
-## 11. Risks (`fa-runtime-structured-read.md:156`)
+## 10. Risks (`fa-runtime-structured-read.md:156`)
 
 1. **God-object** — 32.6K-line `fabrica-runtime.ts` holds live graph + PTY + waiters + floor state + worktree reconciliation; lifecycle changes risk cross-domain regressions.
 2. **Connector sprawl** — ~4,900 ln GitHub/GitLab/Linear/Jira inlined (not adapter-separated like MC).
@@ -192,7 +178,7 @@ Preamble contents, in order:
 
 ---
 
-## 12. Open Study Questions (next reads)
+## 11. Open Study Questions (next reads)
 - [ ] `coordinator.ts` tick internals — exact slot/drift/circuit-breaker math.
 - [ ] `preamble.ts` — full template + how drift/gate context is injected.
 - [ ] `lifecycle-reconciliation.ts` — authority + idempotency edge cases.
