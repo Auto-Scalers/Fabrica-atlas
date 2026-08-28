@@ -15,6 +15,27 @@ It already provides: run/task/worker lifecycle, dispatch preambles (system-promp
 
 ---
 
+## 1.1 Sub-Systems Covered (index)
+
+Each sub-system below is described in its own section. `orchestration-ideas.md` lists these same titles with idea buckets underneath.
+
+| # | Sub-System | Section |
+|---|---|---|
+| 1 | Run (run-create) | §5.1 |
+| 2 | Task (task-create) | §5.2 |
+| 3 | Coordinator (auto-dispatch) | §5.3 |
+| 4 | Worker-start (explicit) | §5.4 |
+| 5 | worker_done settlement (lifecycle-reconciliation) | §5.5 |
+| 6 | Decision gates | §5.6 |
+| 7 | Federation sync (cross-environment) | §5.7 |
+| 8 | Drift-guarded dispatch (git layer) | §5.8 |
+| 9 | Preamble system | §6 |
+| 10 | RPC surface | §7 |
+| 11 | Integration points | §8 |
+| 12 | Reference designs (MC + buzz) | §9 |
+
+---
+
 ## 2. Architecture Location
 
 - Code: `src/main/runtime/orchestration/` — **60 files** (`fabrica-app-discovery.md:230`).
