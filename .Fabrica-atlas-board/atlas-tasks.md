@@ -576,6 +576,9 @@ _Last updated: 2026-08-23_
 | Move feature files to board | DONE | Fabrica-features.md, mc-features.md, buzz-features.md moved to .Fabrica-atlas-board/ |
 | Move discovery/analysis/verify out of board | DONE | Moved to Fabrica-atlas/ root |
 | Rename Fabrica-atlas-tasks.md to atlas-tasks.md | DONE | Simplified naming |
+| Reorganize discovery/ folder | DONE | Fixed nested round3/round3/, files organized by round |
+| Reorganize verify/ folder | DONE | Files organized into round3/, round4/, round5/, round6/ subfolders |
+| Reorganize analysis/ folder | DONE | Already organized, no changes needed |
 
 ### Status: Awaiting PM Vision
 
