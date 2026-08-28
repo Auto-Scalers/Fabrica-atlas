@@ -179,6 +179,17 @@ Preamble contents, in order (verified from `preamble.ts`):
 - **Recommendation (`:197`):** the durable-ledger + relay-handoff + poll-driven-reconciler + layered-retry architecture is a strong skeleton; biggest upgrade = **centralize the dispatch predicate and make state transitions event-sourced** so the three roles become views over one log.
 - Fix list (`:190-196`): extract ONE shared scheduler; single-writer discipline / append-only event log; PID+start-time liveness; atomic tmp+rename writes; reaper for zombie `running` rows; persisted overflow queue.
 
+### 9.1.1 Mission Control — `prompt-builder.ts` + `security.ts` (persona / system-prompt layer)
+MC's prompt builder is the **persona/system-prompt** counterpart that Fabrica's operational-only preamble (§6) deliberately omits. Verified from `_sources/mission-control/.../scripts/daemon/`:
+
+- **`buildTaskPrompt` (`prompt-builder.ts:471`):** composes `persona` (agent `instructions` from `agents.json`) + linked `skills` content + **fenced task data** + SOP + optional Field-Ops / restart / retry context, then `enforcePromptLimit`. This is a true agent-identity + behavior prompt.
+- **`buildAgentPersona` (`:83`):** `You are acting as a <name> — <description>.` + `## Your Instructions` + `## Your Capabilities` + `## Your Skills`. Maps directly to the "system prompt" concept.
+- **`buildSOP` (`:167`):** hard rules — read `ai-context.md`, check inbox `to: <agentId>`, never do bookkeeping yourself (system auto-marks done), update subtasks immediately.
+- **Restart/Retry context (`:217`,`:269`):** injects prior mission history and **user decision guidance** (`decisions.json`) so retried tasks take a different approach — a model for gate-resolution injection.
+- **Injection defense (`security.ts`):** `fenceTaskData` wraps task data in `<task-context>…</task-context>` and `escapeFenceContent` neutralizes injected `</task-context>` breakouts (`:71-83`); `enforcePromptLimit` caps at **100KB** (`:65,88`); `scrubCredentials` redacts API keys / bearer / AWS / GitHub / npm / Slack / Stripe / Anthropic / SSH / DB-URLs (`:5-46`); `validateBinary` allows only `claude*` (`:97`); `buildSafeEnv` passes a minimal env (PATH/HOME/TEMP + Windows system vars) and explicitly forwards `CLAUDE_CODE_OAUTH_TOKEN`, stripping all other secrets (`:114`).
+
+**Bridge fact (not an intent):** Fabrica's preamble is operational-only; MC's persona builder is the reference for the missing *system-prompt* layer. Porting `fenceTaskData` / `escapeFenceContent` / `enforcePromptLimit` / `scrubCredentials` into Fabrica's preamble builder is the concrete, low-risk convergence path.
+
 ### 9.2 Buzz — `buzz-discovery.md:84`
 - `buzz-relay` is "the only orchestrator; subsystems never call each other" (crate dependency principle).
 - Agent identity/persona is **relay-owned**; same idea as Fabrica's dispatch authority but portable across environments.
@@ -204,8 +215,8 @@ Preamble contents, in order (verified from `preamble.ts`):
 - [x] `preamble.ts` — verified (§6): full template is terminal-text harness protocol, not a model system prompt.
 - [x] `lifecycle-reconciliation.ts` — verified (§5.5): pane-key authority, 11 rejection codes, worker_done payload contract, idempotency guard via `_FABRICALifecycleRejection`, heartbeat rejection/suppression.
 - [x] Federation: `federation-sync.ts` — verified (§5.7): peer-fingerprint guard, contiguity enforcement, lifecycle mapping, ack lease/checkpoints, reverse push.
-- [ ] MC `prompt-builder.ts` + `security.ts` — preamble grammar + injection defense to port (reference only).
+- [x] MC `prompt-builder.ts` + `security.ts` — documented (§9.1.1): persona/system-prompt builder, fence+escape+limit+scrub injection defense (reference for converging Fabrica's preamble).
 
 ---
 
-_Last updated: 2026-08-28_
+_Last updated: 2026-08-28 (session 2 — verified coordinator.ts, preamble.ts, lifecycle-reconciliation.ts, federation-sync.ts, MC prompt-builder.ts + security.ts from source)_
