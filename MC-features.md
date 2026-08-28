@@ -21,6 +21,8 @@
 | Confirm Dialog | Reusable confirmation modal |
 | Empty State / Error State | Placeholders |
 | Sidebar Footer | Theme toggle, connection status |
+| Guide Page | Documentation/help page for users |
+| Notifications System | Alert system for user notifications |
 
 ---
 
@@ -107,6 +109,10 @@
 |---------|-------------|
 | Crew Page | Browse all agents (5 built-in + custom); view assignments, status; create agents |
 | Team Page | Per-agent detail: assigned tasks, workload, status |
+| Agent Workload Status | 5-state classification: idle, overloaded (>=5 tasks), awaiting-decision, dependencies, on-track |
+| Auto-Generated Agent Files | .claude/commands/<agent.id>/user.md auto-generated on agent save |
+| Auto-Generated Skill Files | skills/<id>/SKILL.md auto-generated on skill save |
+| AI-Context Generator | generate-context.ts builds data/ai-context.md (~650-token workspace snapshot) for agent situational awareness |
 
 **Data Model:** id, name, icon, description, instructions, capabilities[], skillIds[], status
 **Built-in:** me, researcher, developer, marketer, business-analyst
@@ -118,6 +124,10 @@
 | Feature | What It Does |
 |---------|-------------|
 | Skills Page | Browse skills with tags, agent assignments; built-in slash commands (/standup, /daily-plan, /weekly-review, /brainstorm, /research, /plan-feature, /ship-feature, /pick-up-work, /report, /orchestrate) |
+| Slash Command Definitions | 10 built-in commands with structured JSON schemas for parameters, triggers, expected outputs |
+| Skill Examples | per-skill example.json files showing skill execution results |
+| Service Metadata | package.json fields: name, description, version, homepage, repository, author, license |
+| Skill Categories | skills list with filtering by category |
 
 **Data Model:** id, name, description, content (markdown), agentIds[], tags[]
 
@@ -130,6 +140,8 @@
 |---------|-------------|
 | Field Ops Dashboard | Overview: missions, services, pending approvals, executing tasks, autonomy mode, activity, financials |
 | Autonomy Mode Selector | Manual Approval / Supervised / Full Autonomy |
+| Field Ops Stats | totalMissions, activeServices, financials (totalRevenue, totalCost, netProfit) |
+| Activity Feed (Field Ops) | real-time activity feed for field operations |
 
 ### 10b. Missions
 | Feature | What It Does |
@@ -137,13 +149,17 @@
 | Missions Page | List missions with status, autonomy level, linked project |
 | Mission Detail | Individual mission: tasks, progress, execution history |
 | Mission Form Dialog | Create/edit missions |
+| Mission kanbanStatus | pending/in_progress/completed for kanban view |
+| Mission progress | calculated from tasks completion percentage |
 
 ### 10c. Field Tasks
 | Feature | What It Does |
 |---------|-------------|
 | Field Task Card | Card: task type, status, service, approval state |
 | Field Task Form | Create/edit: type, payload, service assignment |
+| Field Task kanbanStatus | pending/in_progress/completed for kanban view |
 | Execution Result Panel | Adapter execution output, success/failure, timing |
+| Execution Metrics | tokens, apiCalls, executionTime |
 | Reject Task Dialog | Reject with feedback |
 | Sign Transaction Button | Crypto transaction signing |
 
@@ -154,6 +170,7 @@
 | Catalog Service Card | Browse installable services |
 | Activate Service Dialog | Configure and activate |
 | Setup Guide Dialog | Step-by-step setup instructions |
+| Service Metadata | package.json fields: name, description, version, homepage, repository, author, license |
 
 ### 10e. Vault (Credential Encryption)
 | Feature | What It Does |
@@ -217,6 +234,9 @@
 | Autopilot Page | Dashboard: start/stop, session history, cron config, execution settings, concurrency limits |
 | Daemon Hook | Client hook for daemon status polling (5s) |
 | Security Model | No network listener, credential scrubbing, prompt fencing, binary whitelist |
+| Chain Dispatch Reconciler | reconciles chain dispatch for sequential task execution |
+| Execute Guards | guards for safe execution of automated tasks |
+| Decision Gates | gates for human approval in automated workflows |
 
 ---
 
@@ -254,3 +274,9 @@
 | Per-File Mutexes | async-mutex per-file locking (18 mutexes) |
 | Mutate Helpers | Atomic read-modify-write with rollback |
 | Data Files | 20+ JSON files for all domains |
+| generate-context.ts | builds data/ai-context.md (~650-token workspace snapshot) for agent situational awareness |
+| Repository Index | context/repository-index.json — lightweight hash index of all tracked files for context agents |
+| File Content Resolver | Resolves file paths to content for AI context |
+| Token Estimation | Rough token count estimation for context windows |
+| Knowledge Filtering | file-exists, context filtering, workspace filtering |
+| Context Caching | filesystem caching of generated context for performance |
