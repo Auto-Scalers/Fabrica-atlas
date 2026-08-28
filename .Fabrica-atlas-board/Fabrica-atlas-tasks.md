@@ -570,6 +570,8 @@ _Last updated: 2026-08-23_
 | Update MC-features.md with missing features | DONE | Added missing features from cross-reference |
 | Update buzz-features.md with missing features | DONE | Added missing features from cross-reference |
 | Delete old atlas-qa.md | DONE | Replaced by feature catalogs |
+| Rename mc-features.md to MC-features.md | DONE | Fixed naming convention |
+| Move atlas-roadmap.md to board | DONE | Moved to .Fabrica-atlas-board/ |
 
 ### Status: Awaiting PM Vision
 
