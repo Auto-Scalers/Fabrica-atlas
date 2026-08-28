@@ -119,6 +119,8 @@ Preamble contents, in order:
 
 **Enhancement target (Intent B):** add a true system-prompt layer (agent instructions/persona, MC `agents.json` + buzz `.persona.md`), then compose it INTO the preamble using MC's grammar — fence + SOP + restart-context (`mc-ai-providers.md:209`, `prompt-builder.ts:471-505`) with injection defenses against fence-escaping (`security.ts:71-83`).
 
+**Proposed mechanism (UNDER DISCUSSION — not validated):** implement the system prompt by prepending it to the start of the dispatch/terminal text (the preamble already injected via `sendTerminalAgentPrompt`). Rationale: minimal change, reuses existing injection path; most CLI agents treat the opening terminal text as their behavior brief. Tradeoffs: terminal text is conversation, not a true model `system` role — weaker than a dedicated agent `--system-prompt`/`-append-system-prompt` flag where one exists; requires delimiter/fence injection defense so task content can't override the directive. Compose using MC's fence + SOP + restart-context grammar for stability across reconnects.
+
 ---
 
 ## 7. RPC Surface
