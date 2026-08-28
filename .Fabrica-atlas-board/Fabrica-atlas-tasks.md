@@ -572,6 +572,9 @@ _Last updated: 2026-08-23_
 | Delete old atlas-qa.md | DONE | Replaced by feature catalogs |
 | Rename mc-features.md to MC-features.md | DONE | Fixed naming convention |
 | Move atlas-roadmap.md to board | DONE | Moved to .Fabrica-atlas-board/ |
+| Rename MC-features.md to mc-features.md | DONE | Fixed naming convention |
+| Move feature files to board | DONE | Fabrica-features.md, mc-features.md, buzz-features.md moved to .Fabrica-atlas-board/ |
+| Move discovery/analysis/verify out of board | DONE | Moved to Fabrica-atlas/ root |
 
 ### Status: Awaiting PM Vision
 
