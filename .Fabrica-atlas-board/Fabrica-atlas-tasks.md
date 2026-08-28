@@ -553,3 +553,25 @@ _Encoding repair note (2026-08-23): this file suffered UTF-8 mojibake (em-dashes
 _Reconstructed (2026-08-23): task file was corrupted to 0KB by a buggy PowerShell script. Restored from git (Round 1-2 version), then rebuilt with all 82 tasks across 6 rounds from master index and session records._
 
 _Last updated: 2026-08-23_
+
+---
+
+## Additional Work (Post-Discovery)
+
+### Feature Catalog Updates
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Create Fabrica-features.md | DONE | ~800 lines, 9 functional groups, ~3,500+ source files |
+| Create MC-features.md | DONE | ~300 lines, 20 groups, 75+ features |
+| Create buzz-features.md | DONE | ~300 lines, 16 groups, 127+ features |
+| Cross-reference MC discovery reports | DONE | Found missing features: autopilot UI, guide page, notifications, workflow engine, adapter details, AI providers, chain dispatch, decision gates, execute guards, field task kanban, service catalog |
+| Cross-reference buzz discovery reports | DONE | Found missing features: huddle audio details, mobile relay, web client, git hosting on object storage, policy hooks, connection management, push notifications, product feedback, imeta validation, community provisioning, storage sweep, tunnel/mesh, conformance traces |
+| Update MC-features.md with missing features | DONE | Added missing features from cross-reference |
+| Update buzz-features.md with missing features | DONE | Added missing features from cross-reference |
+
+### Status: Awaiting PM Vision
+
+PM must define vision before atlas-roadmap.md can be populated and feature mapping decisions made.
+
+_Last updated: 2026-08-23_
