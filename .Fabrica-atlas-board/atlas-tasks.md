@@ -582,6 +582,7 @@ _Last updated: 2026-08-23_
 | Reorganize discovery/round3 and round4 | DONE | Files organized into buzz/, fabrica-app/, mission-control/ subfolders |
 | Delete verify/ folder | DONE | Historical verification passes removed (not needed) |
 | Merge round3 and round4 into flat structure | DONE | discovery/ now has buzz/, fabrica-app/, mission-control/ directly |
+| Move feature files to discovery/ | DONE | Fabrica-features.md, mc-features.md, buzz-features.md moved to discovery/ |
 
 ### Status: Awaiting PM Vision
 
