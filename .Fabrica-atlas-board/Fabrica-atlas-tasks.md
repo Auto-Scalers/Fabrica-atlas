@@ -569,6 +569,7 @@ _Last updated: 2026-08-23_
 | Cross-reference buzz discovery reports | DONE | Found missing features: huddle audio details, mobile relay, web client, git hosting on object storage, policy hooks, connection management, push notifications, product feedback, imeta validation, community provisioning, storage sweep, tunnel/mesh, conformance traces |
 | Update MC-features.md with missing features | DONE | Added missing features from cross-reference |
 | Update buzz-features.md with missing features | DONE | Added missing features from cross-reference |
+| Delete old atlas-qa.md | DONE | Replaced by feature catalogs |
 
 ### Status: Awaiting PM Vision
 
