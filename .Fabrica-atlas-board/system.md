@@ -90,9 +90,14 @@ Source: `coordinator.ts` (555 ln). Verified constants: `DEFAULT_POLL_MS = 2000`,
 Mutation-receipt dedupe by `(callerFingerprint, requestId)`; retry requires prior dispatch `failed/stopped/abandoned`; inserts `dispatch_contexts(pending)` + `worker_dispatches(starting)`. Setup completion detected via stdout marker `__FABRICA_SETUP_COMPLETE__:<token>:<exitCode>` (`:238`).
 
 ### 5.5 worker_done settlement (`lifecycle-reconciliation.ts`)
-- **Authority check:** only the assigned pane-key (leaf-id equivalence) may settle. Payload knowledge alone is never authority.
-- `settleWorkerReport`: idempotent duplicate detection, staleness checks (must be latest dispatch for task), atomic task+dispatch update, question cleanup, dependency promotion on success.
-- Heartbeats only extend liveness of active dispatches; wrong-sender heartbeats become persisted rejections (`_FABRICALifecycleRejection`) (`:240`).
+Source: `lifecycle-reconciliation.ts` (347 ln). Verified behavior:
+
+- **Authority (`hasLifecycleAuthority`):** if the dispatch row has an `assignee_pane_key`, the sender's `sender_pane_key` must match (leaf-id equivalence via `parsePaneKey`; tab half may change on break-out). Legacy rows with no pane key fall back to exact `assignee_handle` equality. **Payload knowledge alone is NEVER authority** (`:26`).
+- **Rejection codes:** `sender_not_assignee`, `dispatch_capability_invalid`, `invalid_payload`, `missing_task_id`, `missing_dispatch_id`, `invalid_outcome` (must be `succeeded|failed`), `unknown_task`, `unknown_dispatch`, `task_dispatch_mismatch`, `inactive_dispatch`, `stale_dispatch`.
+- **worker_done contract:** requires a JSON object payload with `taskId` + `dispatchId` + `outcome`. Settlement delegates to `db.settleWorkerReport(...)`, which performs idempotency + staleness checks; on `rejected` the message is converted to a persisted rejection.
+- **Idempotency guard:** a `_FABRICALifecycleRejection` marker inside the payload is reserved persistence state — caller-supplied markers can't turn a lifecycle send into a success (`:95`).
+- **Heartbeat reconciliation:** wrong-pane heartbeats are **rejected** (`sender_not_assignee`) so they can't refresh liveness of a hung assignee (`:159`). In-flight heartbeats for an already-inactive dispatch are `suppressed` (kept for audit, not surfaced).
+- **Post-settlement:** `suppressEarlierHeartbeats` marks earlier heartbeats for the same `dispatchId` as read+delivered so they don't mask a newer dispatch.
 
 ### 5.6 decision gates
 Created via `gateCreate` or `decision_gate` messages; **humans resolve via `gateResolve`** — coordinator never auto-resolves. Resolved-gate context injected into later preambles (`--- DECISION GATE RESOLVED ---`) (`:241`).
@@ -190,7 +195,7 @@ Preamble contents, in order (verified from `preamble.ts`):
 ## 11. Open Study Questions (next reads)
 - [x] `coordinator.ts` tick internals — verified (§5.3): 2000ms poll, maxConcurrent 4, stale threshold 20, decompose not implemented, escalation→circuit breaker, gates never auto-resolved.
 - [x] `preamble.ts` — verified (§6): full template is terminal-text harness protocol, not a model system prompt.
-- [ ] `lifecycle-reconciliation.ts` — authority + idempotency edge cases (settleWorkerReport: only assigned pane-key may settle; duplicate/staleness detection).
+- [x] `lifecycle-reconciliation.ts` — verified (§5.5): pane-key authority, 11 rejection codes, worker_done payload contract, idempotency guard via `_FABRICALifecycleRejection`, heartbeat rejection/suppression.
 - [ ] Federation: `federationPull`/import effects mapping (`federation-sync.ts`).
 - [ ] MC `prompt-builder.ts` + `security.ts` — preamble grammar + injection defense to port (reference only).
 
