@@ -575,6 +575,7 @@ _Last updated: 2026-08-23_
 | Rename MC-features.md to mc-features.md | DONE | Fixed naming convention |
 | Move feature files to board | DONE | Fabrica-features.md, mc-features.md, buzz-features.md moved to .Fabrica-atlas-board/ |
 | Move discovery/analysis/verify out of board | DONE | Moved to Fabrica-atlas/ root |
+| Rename Fabrica-atlas-tasks.md to atlas-tasks.md | DONE | Simplified naming |
 
 ### Status: Awaiting PM Vision
 
