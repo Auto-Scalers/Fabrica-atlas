@@ -7,8 +7,8 @@
 
 ## Fabrica Orchestration System — Reference & Study Doc (Focus system #1)
 
-> *Primary transformation target. This document is the living reference for the orchestration system we are building on. It documents what Fabrica ALREADY has, the reference designs from MC/buzz, and the gaps toward our 3-tier vision (Meta-Orch → Orchestrator → Worker).*
-> *Sources: `discovery/fabrica-app-discovery.md`, `discovery/fabrica-app/*.md`, `discovery/mission-control/*.md`, `discovery/buzz-discovery.md`.*
+> *Primary transformation target. This document is the living reference for the orchestration system we are building on. It documents what Fabrica ALREADY has.*
+> *Sources: `discovery/fabrica-app-discovery.md`, `discovery/fabrica-app/*.md`.*
 
 ---
 
@@ -16,17 +16,17 @@
 
 Fabrica's orchestration system is the engine that **directs AI agents** (Claude Code, Codex, OpenCode, Pi, ~15 more) running side-by-side in isolated git worktrees. It is the first and most heavily invested area of the After-Rebrand transformation.
 
-It already provides: run/task/worker lifecycle, dispatch preambles , decision gates, federation sync, and an RPC surface. Our job is to  upgrade the model using MC + buzz as references.
+It already provides: run/task/worker lifecycle, dispatch preambles , decision gates, federation sync, and an RPC surface. Our job is to upgrade the model.
 
 **Hard constraint:** preserve every existing feature. Enhance/extend only (Fabrica-App Transformation Rule in `AGENTS.md`).
 
-**How it works (plain English):** The orchestration system is Fabrica's "manager of managers." You give Fabrica a goal; it breaks that into tasks, spins up isolated working copies, and dispatches AI agents (different models/tools) to each task. It keeps track of who is doing what, collects their results, and handles human checkpoints. Right now it already does all of this — our job is to make it richer using two reference designs (Mission Control and buzz), without removing anything that works today.
+**How it works (plain English):** The orchestration system is Fabrica's "manager of managers." You give Fabrica a goal; it breaks that into tasks, spins up isolated working copies, and dispatches AI agents (different models/tools) to each task. It keeps track of who is doing what, collects their results, and handles human checkpoints. Right now it already does all of this — our job is to make it richer, without removing anything that works today.
 
 ---
 
 ## 1.1 Sub-Systems Covered (index)
 
-Each sub-system below is described in its own section. `ideas.md` (Focus system #1) lists these same titles with idea buckets underneath.
+Each sub-system below is described in its own section. The matching system section in `ideas.md` holds the parallel reference designs and new proposals.
 
 
 | #   | Sub-System                                        | Section |
@@ -42,7 +42,7 @@ Each sub-system below is described in its own section. `ideas.md` (Focus system 
 | 9   | Preamble system                                   | §6      |
 | 10  | RPC surface                                       | §7      |
 | 11  | Integration points                                | §8      |
-| 12  | Reference designs (MC + buzz)                     | §9      |
+
 
 
 ---
@@ -234,7 +234,7 @@ Before every dispatch the runtime checks ahead/behind drift vs remote (`getRemot
 `preamble.ts` (`fabrica-app-discovery.md:244`) builds the **dispatch/operational prompt** injected into each worker at dispatch time. Important distinction:
 
 - This is a **harness brief** (CLI contract + task/drift/gate context), **not** a model *system prompt* (agent identity/behavior/persona). It tells the worker *how to operate the Fabrica CLI*, not *who it is*.
-- Fabrica today does **not** set a model-level system prompt per agent. That layer is what MC (`agents.json` → `instructions`) and buzz (`.persona.md`) provide, and what Intent B adds on top.
+- Fabrica today does **not** set a model-level system prompt per agent. That layer is a planned enhancement.
 
 Preamble contents, in order (verified from `preamble.ts`):
 
@@ -251,7 +251,7 @@ Preamble contents, in order (verified from `preamble.ts`):
 
 **Key fact:** the entire preamble is a single string written into the terminal as the worker's opening input. It is harness/operational protocol (how to use the FABRICA CLI), **not** a model `system` role. There is no separate system-prompt channel in this code path.
 
-**How it works (plain English):** The preamble is the instruction brief automatically handed to each agent when it starts. It is *operating instructions*, not the agent's personality. It tells the agent: "You're a worker in Fabrica; here is your task; here are the exact commands to report progress every 5 minutes, to declare done exactly once, to ask a durable question, or to escalate." It also strips the `allow-stale-base` override so the agent can't treat it as an instruction, and it shows the agent any commits it's missing. Important gap: today Fabrica does NOT give each agent a separate "who you are / how to behave" system prompt — that's what the MC and buzz references (and a planned "Intent B") would add.
+**How it works (plain English):** The preamble is the instruction brief automatically handed to each agent when it starts. It is *operating instructions*, not the agent's personality. It tells the agent: "You're a worker in Fabrica; here is your task; here are the exact commands to report progress every 5 minutes, to declare done exactly once, to ask a durable question, or to escalate." It also strips the `allow-stale-base` override so the agent can't treat it as an instruction, and it shows the agent any commits it's missing. Important gap: today Fabrica does NOT give each agent a separate "who you are / how to behave" system prompt — that is a planned enhancement.
 
 ---
 
@@ -346,6 +346,14 @@ The Project / Workspace model is the **container layer above orchestration**. Or
 
   **How it works:** Each working copy is shown as a card in the sidebar. The card displays which agents are running on it, its network ports, its current status, and gives you right-click menus to rename, hide, open a developer menu, or delete it — all without leaving the sidebar.
 
+- **Favorites / quick-open**: starred repos/projects and a quick-open switcher for jumping to any project/worktree, persisted in the `repos`/`ui` store slices (`Fabrica-features.md`).
+
+  **How it works:** You can star frequently used projects as favorites and jump to them from a quick-open list, so your most important working copies are always one keystroke away. This state is saved in the same store slices as the rest of your layout.
+
+- **Multi-folder workspaces**: a single workspace can aggregate several folders/repos opened together, so one window spans multiple projects at once (`Fabrica-features.md`).
+
+  **How it works:** Rather than one folder per window, Fabrica lets a workspace hold several folders, letting you work across related repositories in the same view.
+
 ## 3. Persistence / state
 
 - Store slices: `repos/project-groups/folder-workspace`, `worktrees/worktree-nav-history/worktree-catalog-*`, `ui (sidebars, activeView)` (`fabrica-app-discovery.md:146`).
@@ -365,16 +373,6 @@ The Project / Workspace model is the **container layer above orchestration**. Or
 - **Project/Workspace ≠ orchestration Run.** A project holds many worktrees; each worktree can host dispatched tasks/runs. They are different layers.
 
   **How it works:** A project is the folder; a run is a specific job an agent does inside a working copy of that folder. One project can host many jobs over time — they are different levels of the same hierarchy.
-
-## 5. Reference designs (MC / buzz)
-
-- **MC**: `projects.json` — `{id, name, description, status, color, teamMembers, tags}`; projects group tasks/goals/milestones (`mission-control/CLAUDE.md` data schema). MC projects are pure JSON state, no git/repo binding.
-
-  **How it works:** Mission Control represents a project as a simple labeled record (name, color, members, tags) that groups tasks and goals. It is not tied to a real code repository — it is a planning-only object, whereas Fabrica's projects are tied to actual folders.
-
-- **buzz**: Nostr-native forge — `kind:30621` project (multi-repo grouping, NIP-MP), `kind:30617` repo announcement, branches-as-channels; owner attestation via NIP-OA (`buzz-discovery.md:94,122`; `buzz-desktop.md:100`). buzz projects are git/relay-native and identity-scoped.
-
-  **How it works:** buzz builds projects on a decentralized social network (Nostr). A project can group several repositories, each branch is treated like a chat channel, and the owner proves they control it through a cryptographic signature. This is a more open, identity-based way to organize code than Fabrica's local folders.
 
 ## 6. Hard constraint
 
@@ -443,16 +441,6 @@ The Tasks surface lets users view and act on issues/tasks from external trackers
 
   **How it works:** When Fabrica opens a pull/merge request on your behalf, it uses a unified "forge" layer that paces the requests, fills in a template, and links the related issue, so reviews are created cleanly across providers.
 
-## 3. Reference designs (MC / buzz)
-
-- **[MC]** Status Board Kanban (Not Started / In Progress / Done), `Task Card` (importance/urgency, subtasks, assignment), `Task Detail Panel`, `Task Form`, `blockedBy[]` dependency model; Ventures grid + Goals with linked tasks + Brain-Dump triage (`mc-features.md`).
-
-  **How it works:** Mission Control shows tasks on a simple three-column board with cards that carry importance/urgency, subtasks, and an assignee; a task can be marked `blockedBy` others. It also groups tasks under "Ventures" and "Goals" and has a "Brain-Dump" inbox to triage raw ideas. This is a planning board pattern Fabrica could adopt.
-
-- **[buzz]** (none — buzz has no issue/task board; only nostr "projects" as repo groupings and managed-agent task records.)
-
-  **How it works:** buzz does not have a task/issue board like Jira or GitHub; it only tracks projects as repo groupings and records tasks an agent was given. So there is no comparable board design to borrow from buzz here.
-
 ## 4. Hard constraint
 
 Preserve every existing tracker integration. Enhance/extend only (Fabrica-App Transformation Rule in `AGENTS.md`).
@@ -504,19 +492,13 @@ The Agent Dashboard is the real-time surface for monitoring running agents: a bo
 
   **How it works:** Fabrica figures out which agents are running by looking for their command-line tools on the system path, limited to the current SSH connection or runtime environment, so it doesn't accidentally pick up agents from elsewhere.
 
+- **Agent roster (supported hook services)**: Fabrica ships a roster of built-in agent-hook integrations (Claude Code, Codex, OpenCode, Gemini, Grok, and others) registered as hook services, each with its own status, and a per-agent enable/disable toggle (`Fabrica-features.md §8.5`).
+
+  **How it works:** Fabrica maintains a catalog — the "roster" — of the agent tools it can dispatch and monitor, each registered as a hook service so the dashboard can show and drive any of them; individual agents can be paused or disabled without affecting the rest of the roster.
+
 - **Host**: `AgentDashboardSidebarHost` mounted in sidebar composition (`fabrica-app-renderer.md`); experimental feature flags "agents view" / "agent dashboard" (`fabrica-app-renderer.md:255`).
 
   **How it works:** The dashboard can also be hosted inside the sidebar, and it is gated behind experimental on/off switches ("agents view" / "agent dashboard") so you can enable it when ready.
-
-## 3. Reference designs (MC / buzz)
-
-- **[MC]** Command Center Dashboard with Crew Status workload list + per-agent pills (5-state: idle / on-track / dependencies / awaiting-decision / overloaded) (`mc-features.md`, `mc-ui-frontend.md:103-132`); Crew Page (browse agents), Team Page (per-agent workload) (`mc-features.md`).
-
-  **How it works:** Mission Control's dashboard shows a crew-status list and a colored "pill" per agent in one of five states (idle, on-track, waiting on dependencies, awaiting a decision, or overloaded). It also has pages to browse agents and see each one's workload — a clear at-a-glance health model Fabrica could mirror.
-
-- **[buzz]** Agent "card minting" → `MintedAgentCard` via `mint_agent_card`; `AgentPool` with fixed slots + per-agent status (`buzz-desktop.md:50`; `buzz-agent-crates.md:33`).
-
-  **How it works:** buzz creates a visual "card" for each agent (like minting a collectible) and keeps a fixed pool of agent slots, each showing its status. This gives every agent a tangible identity and a capped, manageable number of running agents.
 
 ## 4. Hard constraint
 
@@ -581,16 +563,6 @@ The unified command palette (Worktree Jump Palette, Cmd+J) is the global entry p
 
   **How it works:** Today's search is plain text matching; it does not use AI embeddings or language models to understand meaning, so a search finds words, not concepts.
 
-## 3. Reference designs (MC / buzz)
-
-- **[MC]** Search Dialog = global search across tasks/projects/goals, Ctrl+K palette (`mc-features.md`; `mc-ui-frontend.md:73`).
-
-  **How it works:** Mission Control has a Ctrl+K search box that looks across tasks, projects, and goals at once — a comparable global-palette pattern Fabrica could align with.
-
-- **[buzz]** NIP-50 / Postgres FTS full-text search (tsvector + GIN index, privacy-sensitive kinds excluded, community-scoped) (`buzz-features.md`, `buzz-discovery.md`).
-
-  **How it works:** buzz searches using a database full-text engine (Postgres) with a special index, excluding private content and scoping results to a community. This is a more powerful, index-backed search Fabrica could borrow for relay content.
-
 ## 4. Hard constraint
 
 Preserve every existing search path. Enhance/extend only (Fabrica-App Transformation Rule in `AGENTS.md`).
@@ -642,15 +614,13 @@ The Integrations surface manages connections to external SaaS providers used by 
 
   **How it works:** A unified "forge" layer wraps the different git hosts so that opening a pull/merge request uses the same code path everywhere, with polite pacing and linked issues.
 
-## 3. Reference designs (MC / buzz)
+- **Credential vault**: provider tokens are stored in the OS keychain (e.g., the `linear/` SDK keychain tokens) and surfaced via the `IntegrationsPane`/status pill; secrets are isolated per integration (`Fabrica-features.md`, `fabrica-app-discovery.md:128`).
 
-- **[MC]** Service Catalog: 64 services across 16 categories, `authType` oauth2/api-key/none, encrypted credential vault (AES-256-GCM), connect/test, financial safety budgets (`mc-service-catalog.md`; `mission-control-discovery.md:352`). Adapter layer for provider-specific sync (cleaner than Fabrica's connector sprawl) (`fa-runtime-structured-read.md:8`, `mc-adapters-linelevel.md`).
+  **How it works:** Login tokens for each connected service are kept in the operating system's secure credential store rather than plaintext, and each integration's secrets stay isolated so a leak in one can't expose another.
 
-  **How it works:** Mission Control lists 64 services in 16 categories, each tagged with how it authenticates, and stores credentials in a strongly encrypted vault (AES-256-GCM). It also enforces "financial safety budgets" so an agent can't overspend on a paid API. An adapter layer normalizes each provider's sync — a cleaner pattern than Fabrica's many separate connectors, and a candidate to adopt.
+- **OAuth / API-key auth**: connectors authenticate via OAuth2 flows (e.g., Jira/GitHub) or API keys (Linear), handled through the connect dialogs; the `linear/` SDK performs token exchange and refresh (`Fabrica-features.md:476,529`; `fabrica-app-discovery.md:128`).
 
-- **[buzz]** (none — buzz "integrations" are nostr relays/communities, not SaaS connectors.)
-
-  **How it works:** buzz's notion of "integration" is connecting to decentralized Nostr relays and communities, not SaaS apps like Jira, so there is no SaaS connector design to borrow from buzz here.
+  **How it works:** When you connect a service, Fabrica walks you through an OAuth login or asks for an API key, then stores the resulting token and refreshes it as needed so the connection stays live without re-logging in.
 
 ## 4. Hard constraint
 
@@ -703,16 +673,6 @@ Automations let users define rules that **dispatch agent tasks on a schedule or 
 
   **How it works:** Fabrica already has a built-in "cron" timer (the standard way to say "run this on a schedule"), so time-based automations don't need an external scheduler.
 
-## 3. Reference designs (MC / buzz)
-
-- **[MC]** Workflow Engine: four run engines + `node-cron` scheduler (`dailyPlan` `0 7 * * *`, `standup`, `brainDumpTriage`, `weeklyReview`), approval gates via `decisions.json`, `maxParallelAgents` concurrency, `accumulateRunCost` (`mc-workflow-engine.md`).
-
-  **How it works:** Mission Control's engine has four ways to run work plus a cron scheduler that fires daily plans, standups, brain-dump triage, and weekly reviews. It gates approvals through a decisions file and caps how many agents run at once, tracking cost — a mature scheduling model Fabrica could learn from.
-
-- **[buzz]** YAML-as-Code Workflow Engine: channel-scoped automation, 4 triggers, 7 actions, template variables, `evalexpr` conditions (100ms timeout), workflow approvals with UUID tokens, signed step traces (`buzz-features.md`).
-
-  **How it works:** buzz lets you write automations as YAML text: pick from 4 triggers and 7 actions, use variables and simple conditions (evaluated within 100ms), and require approval via a UUID token, with each step cryptographically signed. This "workflow as code" pattern is a candidate to bring into Fabrica's automations.
-
 ## 4. Hard constraint
 
 Preserve every existing automation. Enhance/extend only (Fabrica-App Transformation Rule in `AGENTS.md`).
@@ -759,16 +719,6 @@ Stats & Usage is the observability surface for token/cost consumption per AI pro
 - **Slices**: `claude/codex/opencode usage`; `star-nag` gated by stats (`fabrica-app-discovery.md:146,128`).
 
   **How it works:** Saved state includes per-provider usage (Claude/Codex/OpenCode) and a "star-nag" prompt (a gentle ask to star the project) whose display is decided by your usage stats.
-
-## 3. Reference designs (MC / buzz)
-
-- **[buzz]** Agent Turn Metrics `kind:44200` durable per-turn token-usage; `storage_sweep.rs` hourly S3 usage sweep; owner-scoped encrypted telemetry frames (`buzz-features.md`).
-
-  **How it works:** buzz records token usage for every single agent turn in a durable, per-turn record, sweeps usage data to storage hourly, and scopes encrypted telemetry to the owner. This durable, per-turn accounting is a pattern Fabrica could add to its usage contract.
-
-- **[MC]** (none comparable — MC integrates only the Claude CLI with NO per-provider token/cost accounting, no 429/backoff enforcement; explicit gap vs Fabrica.)
-
-  **How it works:** Mission Control only connects to the Claude CLI and does not track per-provider token cost or enforce rate-limit backoffs — so Fabrica is actually ahead of MC here, and there is nothing from MC to adopt.
 
 ## 4. Hard constraint
 
@@ -840,16 +790,6 @@ The Plugin system lets third parties extend Fabrica via out-of-process plugins (
 - **Plugin host facade** narrowed to `resolveActiveWorktreeContext`, `listTerminals`, `sendTerminal`, `dispatchPluginNotification` (`fa-runtime-structured-read.md:7`).
 
   **How it works:** A plugin is intentionally given only four host abilities — find the active worktree, list terminals, send to a terminal, and dispatch a notification — limiting what it can touch in your workspace.
-
-## 3. Reference designs (MC / buzz)
-
-- **[MC]** (none — MC has no plugin marketplace; only a `Skills Page` with tags/agent-assignment and built-in slash commands.)
-
-  **How it works:** Mission Control has no installable-plugin marketplace; it only has a Skills page (tagged, assignable to agents) and built-in slash commands. So there is no MC marketplace design to adopt — Fabrica's plugin system is already richer.
-
-- **[buzz]** (none — buzz extensibility is via agent crates/recipes, not installable plugins.)
-
-  **How it works:** buzz extends itself through "agent crates" and recipes rather than installable plugins, so there is no comparable plugin marketplace to borrow from buzz either.
 
 ## 4. Hard constraint
 
