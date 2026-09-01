@@ -57,10 +57,10 @@ Top-level discovery docs: `buzz-discovery.md`, `fabrica-app-discovery.md`, `miss
 
 ## Next Steps
 
-### 1. Atlas Roadmap — First Batch Selection
-- [ ] PM works on `atlas-roadmap.md` to define the first batch of features to build in Fabrica
-- [ ] Identify priority items from existing analysis files
-- [ ] Group into implementable batches
+### 1. Atlas Roadmap — First Batch Selection ✅
+- [x] PM works on `atlas-roadmap.md` to define the first batch of features to build in Fabrica
+- [x] Identify priority items from existing analysis files
+- [x] Group into implementable batches
 
 ### 2. Analytics Review
 - [ ] PM reviews analytics/analysis files for a broader picture

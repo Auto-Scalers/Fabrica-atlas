@@ -3,7 +3,9 @@
 > **First batch = the rebrand look + unfair-advantage features.** Detailed plans for each item live in its own folder under `plans/`.
 > Lower-level reference (what Fabrica already has, MC/buzz parallels, new ideas) lives in `baseline/` and `proposals/` — the roadmap does not repeat those details.
 
-## Batch 1 — Settings Consolidation (Sidebar Reorganization)
+# Batch 2 — UI/UX enhancements -  (get ready for Transformation)
+
+## 1. Settings Consolidation (Sidebar Reorganization)
 
 > Move settings panels directly into the main left sidebar. Eliminate the separate settings sidebar. No functionality is lost — panels are merged/relocated, not removed.
 
@@ -25,7 +27,28 @@
 
 **Principle:** Every current settings window gets relocated to the left sidebar — either as its own item or merged into an existing sidebar tab. The settings sidebar is eliminated entirely.
 
-## Batch 2 — Core Platform + Infrastructure
+# Batch 2 — Production Transformation Architecture — Fabrica
+
+> Defines the complete picture of what the production Fabrica app should be: a **desktop agent management and operations platform for business and coding builders/operators**.
+
+---
+
+## 1. Product Definition
+
+**Fabrica** is the single desktop command center where a builder (technical or not) delegates work to a fleet of AI agents — coding work in worktrees, business operations through real-world services — and supervises everything through one legible surface: priorities, activity, decisions, spend, and history.
+
+*You decide what matters; agents do the work; Fabrica makes it safe, visible, and reversible.*
+
+### Design Principles
+
+- **Agents are members, not tools** — persistent identities, own credentials, own audit trail
+- **Safety before autonomy** — nothing real-world happens without an approval path, spend cap, and kill switch
+- **One source of truth** — every action becomes a queryable record
+- **Legibility over raw access** — sentence-per-item activity, outcome-first, progressive disclosure
+- **Local-first, cloud-optional** — the operator owns their data
+- **The human is the owner** — security settings are owner-guarded; agents can never change them
+
+## 2. Core Platform + Infrastructure
 
 *Terminology:* **Orcastration Workspace** = a .brain/ folder inside 'fabrica/' or '.fabrica/'
 
@@ -34,7 +57,7 @@ the top-level default project (`AGENTS.md` + `README`) that hosts the `meta-orch
 
 | #   | Feature                                     | Details                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | --- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **Role + type assignment (agent personas)** | Terminals get a **type** (`meta-orch`, `orch`, or `worker`); **roles/personas** are assigned only to **workers** (the `meta-orch` and orcastrators are typed only — no role).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| 1   | **Role + type assignment (agent personas)** | Terminals get a **type** (`meta-orch`, `orch`, or `worker`); **roles/personas** are assigned only to **workers** (the `meta-orch` and orcastrators are typed only — no role). see promptInjectionMode for refs                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | 2   | **Unified chat UI (top layer)**             | A unified chat layer that sits above the terminal, across all agents.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | 3   | **Orcastration Workspace + Crew model**     | A **Workspace** (default project with its own `AGENTS.md` and `README`, mirroring the current `Fabrica-development_environment` + its sub-projects) hosting the `meta-orch` and the orcastrators. Sub-projects (each with their own `AGENTS.md`) live inside it; adding a sub-project **auto-creates its orcastrator terminal**. The `meta-orch` monitors the **orcastration crew**; each orcastrator monitors a **workers crew** launched inside its sub-project. User controls: **on/off for the `meta-orch`** and **on/off per orcastrator**; **launch mode** (orcastrators launch workers on the **main branch** or in **worktrees**); linking, per-orcastrator **roles allowlist**, **alone** terminals. |
 | 4   | **Enhance orchestration system**            | Improvements to the orchestration engine.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
