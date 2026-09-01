@@ -44,44 +44,7 @@ Quality gates: `just ci` (fmt+clippy+tests+builds), pre-commit auto-fix hooks, p
 
 ## 3. Repository Structure
 
-```
-_sources/buzz/
-├── ARCHITECTURE.md          # System design, kind ranges, subsystem boundaries (827 lines)
-├── AGENTS.md                # Agent contributor guide (conventions, gotchas)
-├── README.md / CONTRIBUTING.md / TESTING.md / RELEASING.md / NOSTR.md /
-│   GOVERNANCE.md / SECURITY.md / CHANGELOG.md
-├── VISION*.md               # 8 vision docs (see §4)
-├── preview-features.json    # Feature-flag registry (workflows, projects, pulse, forum,
-│                            #   agentManagedProfiles — desktop-only previews)
-├── .agents/.codex/.goose/skills/   # identical agent-tool skill pairs: desktop-screenshot,
-│                            #   sprout-cli (legacy Sprout name → nest_skill.md)
-├── Cargo.toml / rust-toolchain.toml / Justfile / lefthook.yml / biome.json
-├── docker-compose.yml (dev) / Dockerfile (relay) / Dockerfile.push-gateway / Dockerfile.sprig
-├── prometheus.yml / ct.yaml / deny.toml / renovate.json
-├── crates/                  # ~30 Rust crates (§5–§8)
-├── desktop/                 # Tauri 2 + React 19 app (§9)
-├── mobile/                  # Flutter app (§10)
-├── web/                     # Browser repo-browser client (§11)
-├── admin-web/               # Operator dashboard: moderation queue + feedback (§11)
-├── migrations/              # 31 SQL migrations (auto-applied on relay startup)
-├── schema/schema.sql        # Consolidated current schema snapshot
-├── deploy/                  # compose bundles (prod/VPS + Caddy TLS), Helm charts
-│                            #   (buzz + buzz-push-gateway), local cluster scripts
-├── docs/                    # Design docs, TLA+/Tamarin specs, custom NIP extensions
-│                            #   (NIP-AA/AE/AM/AO/AP/CW/DV/ER/GS/IA/MP/OA/PL/PMA/RS/WP),
-│                            #   screenshots
-├── benchmarks/harbor-buzz-orchestra/  # Python multi-agent benchmark harness
-├── perf/                    # Relay bus scaling measurements
-├── examples/                # countdown-bot (standalone Nostr bot), meadow-core (persona pack)
-├── patches/                 # isomorphic-git.patch, virtua patch
-├── scripts/                 # ~60 release/dev/E2E/gate scripts
-└── bin/                     # Hermit pinned toolchain
-```
-
-Rust crate inventory (files / lines):
-buzz-relay 79/64,090 · buzz-acp 14/40,631 · buzz-db 24/34,789 · buzz-agent 21/27,579 · buzz-cli 29/17,772 · buzz-test-client 23/16,197 · buzz-core 22/8,590 · buzz-media 12/6,166 · buzz-backend-kubernetes 15/6,118 · buzz-sdk 5/5,853 · buzz-dev-mcp 11/5,202 · buzz-workflow 5/4,427 · buzz-persona 9/4,612 · buzz-push-gateway 13/3,917 · buzz-relay-mesh 9/2,838 · buzz-voice 6/2,981 · buzz-pair-relay 3/2,171 · git-sign-nostr 2/2,277 · buzz-deletion 1/1,958 · buzz-pubsub 10/1,861 · buzz-search 4/1,777 · buzz-auth 8/1,696 · buzz-conformance 5/1,644 · buzz-audit 6/1,014 · buzz-admin 2/579 · git-credential-nostr 3/556 · buzz-pairing-cli 1/548 · buzz-ws-client 4/502 · buzz-datastore-tracing 2/226 · sprig 1/50.
-
-Crate dependency principle: `buzz-core` (zero I/O) ← db/auth/pubsub/search/audit/workflow ← buzz-relay (the only orchestrator; subsystems never call each other).
+Rust monorepo: ~30 crates (`crates/`), Tauri 2 desktop (`desktop/`), Flutter mobile (`mobile/`), browser repo-browser (`web/`), operator dashboard (`admin-web/`), 31 SQL migrations, Docker/Helm deploy, TLA+/Tamarin specs. Crate dependency principle: `buzz-core` (zero I/O) ← db/auth/pubsub/search/audit/workflow ← buzz-relay (the only orchestrator; subsystems never call each other). Full crate inventory with file/line counts in `discovery/buzz/bz-db-schema.md` §1.
 
 ---
 
@@ -110,141 +73,56 @@ Limits: max frame 65,536 B; 1024 subscriptions/connection; 500 historical result
 ### Kind ranges
 0–9999 standard Nostr · 10000–19999 replaceable · 20000–29999 ephemeral (not stored/audited/searched) · 30000–39999 parameterized replaceable · 40000–49999 Buzz custom.
 
-### Full custom-kind registry (buzz-core/src/kind.rs, ~150 constants)
-- **Profiles/social**: 0 profile, 1 text note, 3 contact list, 10000 mute list, 10001 pin list, 10002 relay list, 10003 bookmark list, 10030 emoji list, 30000 follow set, 30003 bookmark set, 30030 emoji set, 30023 long-form, 30315 user status, 30078 read state (NIP-78 app data).
-- **Messaging**: 9 stream message (NIP-29), 40002 stream message v2, 40003 edit, 40004 pinned, 40005 bookmarked, 40006 scheduled, 40007 stream reminder, 40008 diff message, 40099 system message, 40901 channel summary, 5 deletion, 7 reaction, 1059 gift wrap (NIP-17 DMs), 1063 file metadata.
-- **DMs**: 41001 created, 41010 open, 41011 add member, 41012 hide, 30622 DM visibility.
-- **Presence/typing**: 20001 presence update (ephemeral), 20002 typing indicator (ephemeral), 40902 presence snapshot.
-- **Channels/groups (NIP-29)**: 9000–9022 group admin events (put/remove user, edit metadata, delete event, create/delete group, invite, join/leave request), 39000 group metadata, 39001 admins, 39002 members, 39003 roles, 39005 thread summary, 39006 window bounds, 41 channel metadata (unused legacy).
-- **Forum**: 45001 post, 45002 vote, 45003 comment.
-- **Agents/jobs**: 10100 agent profile, 43001 job request, 43002 accepted, 43003 progress, 43004 result, 43005 cancel, 43006 error, 44200 agent turn metric, 24200 agent observer frame, 30174 agent engram (memory), 30175 persona, 30176 team, 30177 managed agent, 30178 team catalog, 30179 private managed agent.
-- **Workflows/approvals**: 30620 workflow def, 46001–46007 lifecycle (triggered/step started/completed/failed/completed/failed/cancelled), 46010 approval requested, 46011 granted, 46012 denied, 46020 trigger, 46030 approval grant, 46031 approval deny.
-- **Git/projects (NIP-34 ext)**: 30617 repo announcement, 30618 repo state, 1617 patch, 1618 PR, 1619 PR update, 1621 issue, 1630 open/1631 merged/1632 closed/1633 draft status, 30621 project (multi-repo grouping).
-- **Huddles**: 48100 started, 48101 participant joined, 48102 left, 48103 ended, 48106 guidelines, 24810 huddle reaction.
-- **Moderation**: 1984 report, 9040 ban, 9041 unban, 9042 timeout, 9043 untimeout, 9044 resolve report.
-- **Membership/identity**: 22242 auth (never stored), 24242 blossom auth, 24243 nostr identity binding, 27235 HTTP auth (NIP-98), 13534 NIP-43 membership list, 8000/8001 member added/removed, 28936 leave request, 44100/44101 member notifications (relay-signed only), 24134 pairing.
-- **Misc**: 30300 event reminder, 30350 push lease, 42000 product feedback, 48001 audit entry, 49001 media upload, 9035/9036/8002/8003/13535 identity archive.
-
-Channel scoping rule: events inside channels use `h` tags; addressable channel-description events carry id in `d` tag. REQ filters must include explicit `kinds` (else p-gate 403).
+### Custom-kind registry (~150 kinds)
+150+ custom kinds across profiles/social, messaging, DMs, presence/typing, channels/groups (NIP-29), forum, agents/jobs, workflows/approvals, git/projects (NIP-34 ext), huddles, moderation, membership/identity, and misc. Channel scoping rule: events inside channels use `h` tags; REQ filters must include explicit `kinds` (else p-gate 403). Full registry with file:line citations in `discovery/buzz/bz-relay-event-kinds.md` §G.
 
 ---
 
 ## 6. Relay Backend (crates)
 
-### Connection lifecycle (buzz-relay)
-Step 0 community binding (host→TenantContext before any handler; unknown host fails closed) → Step 1 connection semaphore acquire → Step 2 NIP-42 challenge sent immediately → Step 3 auth (Pending→Authenticated(AuthContext)/Failed) → Step 4 three loops (recv inline, send spawned via mpsc, heartbeat ping/30s w/ 3-miss disconnect) + CancellationToken shutdown + slow-client grace (3 consecutive full send buffers → cancel) → Step 5 cleanup (cancel, await tasks, remove subscriptions, deregister, drop permit).
-
-### Event pipeline (per EVENT message, ordered)
-1 AUTH check (MessagesWrite scope) → 2 pubkey match → 3 KIND_AUTH reject → 4 ephemeral route (20000–29999 bypass DB/audit/search) → 5 verify_event (spawn_blocking; Schnorr + SHA-256 ID) → 6 channel membership check → 7 DB insert (ON CONFLICT DO NOTHING) → 8 Redis publish (if channel-scoped) → 9 fan-out (three-tier registry; global subs excluded from private-channel events — security boundary) → 10 search index (bounded queue cap 1000) → 11 audit log (spawned) → 12 workflow trigger (spawned; excludes kinds 46001–46012, relay-signed `buzz:workflow` messages, gift wraps). Steps 10–12 fire-and-forget; OK frame after full pipeline.
-
-### SubscriptionRegistry
-DashMap-backed three-tier fan-out: tier 1 `(channel_id, kind)` index O(1); tier 2 channel wildcard (no kinds constraint); tier 3 global linear scan (non-channel-scoped events only). `kinds: []` matches nothing; absent kinds = match all. REQ handler checks channel access BEFORE registering subscription (no race window for private-channel leaks). Historical query up to 500/filter then EOSE.
-
-### HTTP surface (Axum)
-GET `/` (WS upgrade or NIP-11 info), `/info`, `/.well-known/nostr.json` (NIP-05), `/health`, `/_liveness`, `/_readiness`; POST `/events` (same ingest path as WS), `/query` (NIP-01 filters; NIP-50 search routed to FTS), `/count` (NIP-45), `/hooks/{id}` (workflow webhook, secret-authenticated constant-time compare); PUT `/media/upload` (Blossom, 50 MB), GET `/media/{sha256}`; GET `/git/{owner}/{repo}/info/refs`, POST `/git/.../git-upload-pack` + `/git-receive-pack` (smart HTTP); POST `/internal/git/policy`.
+### buzz-relay (79 files / 64,090 lines)
+Connection lifecycle: community binding → auth (NIP-42) → three loops (recv/send/heartbeat) + graceful shutdown. Event pipeline: 12-step ordered flow (auth → verify → channel check → DB insert → Redis publish → fan-out → search index → audit → workflow trigger). HTTP surface: WS upgrade, NIP-05, health, media (Blossom), smart HTTP git hosting. Full handler-level analysis in `discovery/buzz/bz-db-schema.md` §2 and `discovery/buzz/bz-ops-deploy-admin.md`.
 
 ### buzz-core (zero I/O)
-StoredEvent, filters_match (OR across filters, AND within; NIP-01 prefix matching on IDs), verify_event (CPU-bound), is_private_ip (comprehensive SSRF blocklist IPv4+IPv6+mapped), ALL_KINDS registry, pairing module (NIP-AB spec doc embedded).
+StoredEvent, filters_match, verify_event, is_private_ip (SSRF blocklist), ALL_KINDS registry, pairing module. Full detail in `discovery/buzz/bz-db-schema.md` §3.
 
 ### buzz-auth
-NIP-42 verify_auth_event (±60s timestamp tolerance; grants all 14 scopes), NIP-98 validate_nip98_auth (kind:27235 w/ URL+method tags). AuthContext {pubkey, scopes, method}. Scopes: MessagesRead/Write, ChannelsRead/Write, AdminChannels, UsersRead/Write, AdminUsers, JobsRead/Write, SubscriptionsRead/Write, FilesRead/Write. RateLimiter trait exists but NO production implementation (known limitation #2); RateLimitConfig defines 4 tiers (human, agent-standard, agent-elevated, agent-platform) as design target. Dev-only key derivation SHA-256("buzz-test-key:{username}") feature-gated.
+NIP-42 + NIP-98 verification, 14 scopes, AuthContext. RateLimiter trait exists but NO production implementation. Full detail in `discovery/buzz/bz-db-schema.md` §3.
 
-### buzz-db (Postgres, sqlx runtime queries)
-Modules: event.rs (insert ON CONFLICT DO NOTHING returning was_inserted; query_events via QueryBuilder), channel.rs (CRUD, transactional TOCTOU-safe role enforcement; types Stream/Forum/Dm/Workflow; roles Owner/Admin/Member/Guest/Bot; soft-delete members via removed_at), feed.rs (query_mentions INNER JOIN normalized event_mentions table; query_needs_action; query_activity; FEED_MAX_LIMIT=100), workflow.rs (workflow/run/approval CRUD; approval tokens stored SHA-256-hashed, single-use via `AND status='pending'`), partition.rs (monthly range partitioning events + delivery_log; DDL injection protection via allowlist), dm.rs, reaction.rs, thread.rs (reply_count/descendant_count materialized counters), user.rs. Run statuses: Pending/Running/WaitingApproval/Completed/Failed/Cancelled.
+### buzz-db (Postgres, sqlx)
+Event insert, channel CRUD with TOCTOU-safe role enforcement, feed queries, workflow/approval CRUD, monthly range partitioning. Full schema + migration chain in `discovery/buzz/bz-db-schema.md`.
 
 ### buzz-pubsub (Redis)
-Dedicated PubSub connection (pool connections can't PSUBSCRIBE); PUBLISH buzz:channel:{uuid} → PSUBSCRIBE loop → broadcast::channel(4096) → consumer fans out locally; multi-node wired w/ local-echo dedup (moka cache of locally-published IDs). Reconnect backoff 1s→30s doubling. Presence: SET EX 180 (3× heartbeat). Typing: ZADD window 5s, EXPIRE 60s. Multi-community keys prefixed buzz:{community}:….
+Dedicated PubSub connection, PSUBSCRIBE loop, multi-node local-echo dedup. Presence (SET EX 180), typing (ZADD window 5s). Full detail in `discovery/buzz/bz-search-pubsub.md`.
 
 ### buzz-search (Postgres FTS)
-search_tsv generated tsvector column populated on insert (to_tsvector('simple', content)), GIN-indexed; privacy-sensitive kinds (1059 gift wrap, 30300 reminders, 30622 DM visibility) yield NULL tsv = storage-level unsearchable. ChannelScope enum (Any/ChannelLessOnly/Channels/ChannelsOrChannelLess). Every query carries community_id (BitmapAnd with btree filters). Returns candidates only — relay re-authorizes each hit.
+Generated tsvector + GIN index, privacy-sensitive kinds yield NULL tsv = unsearchable. ChannelScope enum (Any/ChannelLessOnly/Channels/ChannelsOrChannelLess). Full detail in `discovery/buzz/bz-search-pubsub.md`.
 
 ### buzz-audit
-SHA-256 hash-chain append-only log; hash covers seq/timestamp/event_id/kind/actor/action/channel/metadata(BTreeMap canonical)/prev_hash; genesis = 64 zeros; pg_advisory_lock single-writer (panic-safe catch_unwind); verify_chain() walks. 10 actions (EventCreated…RateLimitExceeded). Refuses KIND_AUTH and ephemeral events. Per-community chains in multi-community mode.
+SHA-256 hash-chain append-only log, pg_advisory_lock single-writer, 10 action types. Per-community chains in multi-community mode. Full detail in `discovery/buzz/bz-db-schema.md` §4.
 
 ### buzz-workflow (YAML-as-code engine)
-Definition: name, trigger{on: message_posted|reaction_added|schedule|webhook, filter evalexpr}, steps[] {id, action, if, params}. 7 actions: send_message, send_dm (stubbed NotImplemented), set_channel_topic (stubbed), add_reaction, call_webhook (SSRF-guarded, redirects disabled, 1 MiB cap), request_approval (Suspended w/ UUID token — not yet persisted/resumed end-to-end 🚧WF-08), delay (max 300s). Templates {{trigger.text}}/{{trigger.author}}/{{steps.ID.output.FIELD}} single-pass. evalexpr conditions w/ str_* helpers, dot→underscore conversion, 100ms eval timeout. Concurrency Arc<Semaphore> 100 permits, try_acquire → CapacityExceeded (no queuing). Cron scheduler ticks 60s. Run statuses incl. WaitingApproval.
+7 actions (send_message, add_reaction, call_webhook, request_approval, delay, etc.), evalexpr conditions, cron scheduler, approval suspension with UUID tokens. Full detail in `discovery/buzz/bz-db-schema.md` §5.
 
-### Huddle audio (inside buzz-relay src/audio/)
-WS endpoint /huddle/{channel}/audio; NIP-42 auth + membership check per participant; in-memory rooms; forwards opaque Opus frames; frame protocol v2 (8-byte BE header: seq u16, 48kHz timestamp u32, level dBov i8, flags u8 — invalid levels clamped not dropped); soft cap 25 peers (hard 255 u8 index); bounded per-peer channels (drop-on-full audio, never-drop control); lifecycle Nostr events (joined/left/ended; last peer leaves → room ends + channel archives atomically). Recording/tracks reserved but unbuilt.
-
-### Other backend crates
-- buzz-media: Blossom/S3 blob storage (upload/download, sha256-addressed).
-- buzz-push-gateway: blind capability-gated NIP-PL push gateway for mobile (leases, match queue/gate per migrations).
-- buzz-relay-mesh: inter-relay QUIC mesh transport + membership + fenced wire contract.
-- buzz-deletion: durable whole-community deletion engine.
-- buzz-conformance: runtime trace schema + replay checker for the MultiTenantRelay TLA+ spec.
-- buzz-voice: reusable local voice primitives (Opus/NetEQ/STT/TTS used by desktop huddles).
-- buzz-datastore-tracing: tracing utilities.
-
-### Security model (relay)
-Every event Schnorr-verified pre-storage; ID hash verified independently; frame-size cap; hex validation before URL construction; alphanumeric-only workflow step IDs (evalexpr injection guard); partition-name allowlist (DDL injection); SSRF blocklist on outbound webhooks; webhook secrets compared constant-time; approval tokens CSPRNG UUID stored hashed single-use; membership = the only access gate, checked pre-subscription; TOCTOU-safe transactional membership ops; AUTH events never stored/audited.
-
-### Known limitations (documented, verified)
-No sqlx compile-time query cache · no rate-limit implementation (trait only) · no typing REST endpoint · huddle recording/tracks unbuilt · approval gates not wired end-to-end (runs hit gates → marked Failed) · send_dm/set_channel_topic workflow actions stubbed.
+### Other crates
+buzz-media (Blossom/S3 blob storage), buzz-push-gateway (NIP-PL push), buzz-relay-mesh (QUIC inter-relay mesh), buzz-deletion (durable community deletion), buzz-conformance (TLA+ trace replay checker), buzz-voice (local voice primitives). Full detail in `discovery/buzz/bz-voice-media.md`. Security model: every event Schnorr-verified, SSRF blocklist, constant-time webhook secrets, CSPRNG approval tokens. Known limitations: no rate-limit implementation, no typing REST endpoint, huddle recording unbuilt, approval gates not wired end-to-end.
 
 ---
 
-## 7. Agent Surface (the heart of Buzz's agent story)
+## 7. Agent Surface
 
-### buzz-acp (ACP harness, 14 files/40,631 lines)
-```
-Buzz Relay ──WS──→ buzz-acp ──stdio (ACP/JSON-RPC)──→ Agent (goose/codex/claude-code)
-                                   └─ agent replies via buzz-cli
-```
-- Listens for @mentions on the relay; queues events per channel; at most ONE prompt in-flight per channel; queued mentions batched into a single session/prompt.
-- Pool of 1–32 agent subprocesses with claim/return lifecycle; crash detection + respawn.
-- Config (CliArgs): relay_url, private_key, agent_owner (NIP-OA), agent_command+args, mcp_command, idle_timeout, max_turn_duration, turn_timeout, system_prompt(+file), agents count, heartbeat_interval + heartbeat_prompt, turn_liveness_secs, initial_message, subscribe mode + kinds + channels filters, no_mention_filter, dedup mode, multiple_event_handling, no_ignore_self, context_message_limit, max_turns_per_session, presence/typing toggles, memory toggles, base_prompt_file, model, effort_level, session_title, permission_mode, respond_to + allowlists, team_instructions, relay_observer, exit_after_inactivity, lazy_pool, idle_pool_sleep.
-- Modules: relay.rs (3,143 ln WS+REST+NIP-42), queue.rs (2,565 per-channel batching/dedup), main.rs (2,457 event loop/pool orchestration/heartbeat), pool.rs (2,253 claim/return), config.rs (1,903), acp.rs (1,785 stdio JSON-RPC/timeouts), filter.rs (814 evalexpr subscription rules).
-- Auth env vars injected into managed agent subprocesses: BUZZ_RELAY_URL, BUZZ_PRIVATE_KEY, BUZZ_AUTH_TAG.
-- Discovers channels via GET /api/channels?member=true; auto-subscribes on membership notifications.
+The heart of Buzz's agent story. Full crate-level analysis in `discovery/buzz/buzz-agent-crates.md`.
 
-### buzz-cli (agent-first CLI, 29 files/17,772 lines)
-JSON in / JSON out, designed for LLM tool calls. Reads return sig-stripped JSON arrays; writes return {event_id, accepted, message}. Exit codes: 0 ok, 1 input, 2 network/relay, 3 auth, 4 other, 5 write conflict (NIP-33 LWW). Global flags: --format compact|json, scoping. Deep links: `buzz://message?channel=<uuid>&id=<hex>` → `messages thread --channel --event`.
-
-Command groups & subcommands (from lib.rs enums):
-- **agents** (1,169 ln): draft-create, draft-update, archive, unarchive, archived (+ agent management module).
-- **messages** (1,265 ln): send, send-diff, edit, delete, get, thread, search, vote.
-- **channels** (1,602 ln): list, get, search, create, update, topic, purpose, join, leave, archive, unarchive, delete, members, add-member, remove-member, set-add-policy.
-- **canvas**: get, set. **reactions**: add, remove, get.
-- **emoji**: list, set, rm, export, import. **dms**: list, open, add-member, hide.
-- **users**: get, set-profile, presence, set-presence, set-status.
-- **workflows**: list, get, create, update, delete, trigger, runs, approve.
-- **feed**: get. **social**: publish-note, set-contact-list, get-event, get-user-notes, get-contact-list, set-list, get-list.
-- **notes** (mem-style key-value notes): set, get, ls, rm.
-- **repos**: create, get, list, bind, protect (+ protect list/set/remove).
-- **projects**: create, get, list, add-repo, remove-repo, update, delete.
-- **patches**: send, get, list, status. **pr**: open, update, get, list, status.
-- **issues**: create, get, list, status, assign, unassign.
-- **upload**: file. **media**: get. **mem** (agent memory/engrams, 970 ln): ls, get, hash, set, patch, rm.
-- **pack**: validate, inspect (persona packs). **moderation**: reports, resolve, ban, unban, timeout, untimeout, restricted, audit.
-Plus client.rs (2,299 ln REST/WS wiring), validate.rs (438), links.rs, agent_management.rs (257).
-
-### buzz-agent (minimal ACP agent, 21 files/27,579 lines)
-"Stdio in, tool calls out. Non-streaming. No persistence. No cleverness." Loop: LLM call → tool calls → run via MCP → feed results → repeat; terminates when LLM stops, round cap hit, or client cancels. Output IS its tool calls; text forwarded as agent_message_chunk. Providers: Anthropic Messages API, OpenRouter, any OpenAI-compatible (vLLM, llama.cpp, Ollama, Databricks OAuth PKCE, Block Gateway) via BUZZ_AGENT_PROVIDER env. Up to 8 concurrent sessions each with own MCP servers/history/context; self-summarizes history on context overflow. Files: llm.rs (7,488), config.rs (2,119), agent.rs (1,514), auth.rs (1,214), lib.rs (998), types.rs (1,052), mcp.rs (1,126), catalog.rs (659), handoff.rs (595), hints.rs (649), builtin.rs (529), wire.rs (499), model_capabilities.rs (840).
-
-### buzz-dev-mcp (developer MCP server, 11 files/5,202 lines)
-Tools: **shell** (bash; Windows resolves Git Bash or BUZZ_SHELL; ephemeral processes, process-group kill on every exit path, bounded output), **read_file**, **view_image** (1,076 ln), **str_replace** (file editing), **todo** (task tracking, 512 ln), plus internal _Stop/_PostCompact hooks; rg.rs (ripgrep integration, 453 ln), tree.rs, paths.rs, shim.rs.
-
-### buzz-persona (persona packs, 9 files/4,612 lines)
-`.persona.md` format = YAML frontmatter (name, display_name, description; caps 1 MiB frontmatter/256 KiB body) + markdown body = system prompt. Modules: manifest, merge, pack, resolve, validate. Example pack: examples/meadow-core (personas bana/lev/skip + github-research skill + instructions.md).
-
-### sprig (all-in-one harness, 50 lines)
-Single binary bundling buzz-acp + buzz-agent + buzz-dev-mcp (own Dockerfile; CI workflows sprig.yml/sprig-image.yml).
-
-### Git integration
-- **git-sign-nostr** (NIP-GS): signs commits/tags with BIP-340 Schnorr; plugs in as gpg.x509.program; keys from NOSTR_PRIVATE_KEY > BUZZ_PRIVATE_KEY > git config nostr.keyfile (hex or nsec); optional NIP-OA owner attestation via BUZZ_AUTH_TAG.
-- **git-credential-nostr** (NIP-98): credential helper; on 401 + WWW-Authenticate: Nostr, builds signed kind:27235 event over URL+method, base64 → Authorization: Nostr <token>. git 2.46+ required; CI-friendly via env var.
-
-### Pairing
-- **buzz-pair-relay**: ephemeral sidecar relay for NIP-AB device pairing handshakes.
-- **buzz-pairing-cli** (buzz-pair): source/target/test-vectors subcommands; nostrpair:// QR URIs; 6-digit SAS verification; secret transfer over any Nostr relay; NIP-42 compatible.
-
-### Remote agents
-- **buzz-backend-kubernetes** (15 files/6,118 ln): Kubernetes substrate provider per docs/remote-agents.md provider contract (preserve identity, fail closed with key, converge to single live instance, presence-as-availability, bounded lifetime, secrets out of config). Bundled into desktop app.
-
-### Shared libraries
-- **buzz-sdk**: typed Nostr event builders (used by acp + cli).
-- **buzz-ws-client**: shared NIP-42 WebSocket client (connect/auth/publish).
+- **buzz-acp** (14 files/40,631 lines): ACP harness. @mention → per-channel queue → batched prompt → ACP subprocess pool (1–32) w/ crash respawn, heartbeats, turn timeouts, respond-to allowlists, effort levels. Env vars injected: BUZZ_RELAY_URL, BUZZ_PRIVATE_KEY, BUZZ_AUTH_TAG.
+- **buzz-agent** (21 files/27,579 lines): Minimal ACP agent. LLM-loop + MCP tools, multi-session (up to 8), history self-summarization, provider-swappable via env (Anthropic, OpenRouter, Databricks OAuth PKCE, etc.).
+- **buzz-cli** (29 files/17,772 lines): Agent-first CLI. JSON in/out, sig-stripped compact output, meaningful exit codes, deep-link resolution. 15+ command groups covering agents, messages, channels, workflows, repos, projects, patches, PRs, issues, media, memory, moderation.
+- **buzz-dev-mcp** (11 files/5,202 lines): Developer MCP server — shell, read_file, str_replace, view_image, todo, rg, tree.
+- **buzz-persona** (9 files/4,612 lines): `.persona.md` format (YAML frontmatter + markdown body = system prompt). Example pack: examples/meadow-core.
+- **sprig** (50 lines): Single binary bundling acp + agent + dev-mcp.
+- **Git integration**: git-sign-nostr (NIP-GS, BIP-340 Schnorr commit/tag signing), git-credential-nostr (NIP-98 credential helper).
+- **Pairing**: buzz-pair-relay (ephemeral sidecar relay for NIP-AB device pairing), buzz-pairing-cli (source/target subcommands, nostrpair:// QR URIs, 6-digit SAS verification). Full detail in `discovery/buzz/bz-pair-relay-cli.md`.
+- **Remote agents**: buzz-backend-kubernetes (15 files/6,118 lines) — Kubernetes provider per provider contract. Bundled in desktop.
+- **Shared libraries**: buzz-sdk (typed Nostr event builders), buzz-ws-client (NIP-42 WebSocket client).
 
 ---
 
@@ -255,22 +133,7 @@ add-member (--pubkey npub/hex, --role; publishes kind:13534 roster) · remove-me
 
 ## 9. Desktop App (Tauri 2 + React 19, 2,672 files)
 
-Stack: React 19, TanStack Query v5 + Router v1 (file-based routes), Radix UI, TipTap composer, dnd-kit, emoji-mart, motion, sonner, jdenticon, qrcode, zod v4, mediapipe tasks-vision. All signing/crypto in Rust (nostr-tools is devDep only). Zoom = root font-size scaling; rem-only text enforced by CI guard (check:px-text); virtual typography rem token system; HSL CSS-variable theming w/ sidebar palette + git status colors.
-
-### 29 feature modules (src/features/)
-agents (largest: creation/edit events, managed-agent runtime reconciliation, active-turn store per community, working signal, card minting, observer relay ingestion kind 24200, prevent-sleep, snapshot import/export, owner-only gating) · agent-memory (engrams UI) · channel-templates (apply/create/duplicate) · channels (unread tracking, read-state sync NIP-78 kind 30078 d-tagged docs, live updates, welcome-agent channel) · chat (header) · communities (multi-community storage/navigation; useCommunityInit.resetCommunityState() tears down ALL community-scoped singletons; React key remount boundary) · community-members · custom-emoji · forum (45001/45003) · home (unified inbox/feed) · huddle (voice state machine, PTT mic controls, add-agent dialog, transcription, companion windows; ~40 Rust commands) · identity-archive · local-archive (SQLite event archive, sync manager) · mesh-compute (share-compute toggle; mesh_start/stop/status/model_catalog behind mesh-llm feature) · messages (typing broadcast/receive, paginated history, threads + panel, missing-ancestor loading, drafts, optimistic sends, background media uploads, link previews) · moderation (reports 1984 + mod commands 9040–9044) · notifications (feed-driven + macOS native UNUserNotificationCenter) · onboarding (machine/community/welcome-kickoff/invite/key-backup flows) · presence (kind 20001) · profile (kind 0, avatar upload, NIP-05) · projects (git: repos/branches/commits/diffs/PRs/issues/work items; ~25 project_git* commands) · pulse (activity feed) · reminders (40007/30300) · search (NIP-50 scoped) · settings (updater, ncryptsec encrypted backups, feedback) · sidebar (channels, DM metadata, relay connection card) · terminal (embedded PTY via portable-pty: attach/detach/input/resize/scroll/focus) · user-status (30315) · workflows (runs, approvals grant/deny, triggers).
-
-### Tauri backend (~250 invoke commands)
-Groups: terminal (9), deep links (buzz:// scheme; pending queues for community/entity/navigation; single-instance forwarding), builderlab hosted communities (login/create/archive/transfer), identity & keys (get/import/sign_out, ncryptsec backup create/verify/save, sign_event, create_auth_event, NIP-44 encrypt/decrypt, observer frames), profile/users, projects/git (snapshot/diff/clone/branch/push/pull/merge PR/signed issues), relay (URLs, membership CRUD, admission probe, reconnect hook), channels/messages (full CRUD, reactions, forum, canvas, feed, search, history-before, channel window), media (upload/download/transcode/gif/snapshot, clipboard, media proxy port), agents (ACP discovery/install/connect, managed agents CRUD/start/stop/restart/reconcile, logs, model discovery OpenRouter/Databricks/env, personas CRUD/shared, teams CRUD, snapshots export/import, card minting, backend providers probe), workflows, social (notes timeline/reactions), huddle (~45: start/join/leave/end, PCM audio push, STT pipeline sherpa-onnx, TTS voices, agent voice routing, PTT shortcut, model downloads), pairing (start/confirm SAS/cancel), workspace (apply_workspace, repos dir validation, join policy), archive (save-subscriptions, backfill, usage series), misc (OS idle, prevent sleep, vibrancy, link previews incl. YouTube, updater support).
-
-Boot sequence: sentinel wipe → migrations → identity resolution (fatal if lost) → recovery gates → persona backfill → harness registry warm → mesh coordinator → media proxy spawn → nest ensure (~/.buzz dirs) → CLI symlink → orphaned-agent sweep (60s loop) → persona-event flush (30s loop).
-
-Secrets: OS keyring (system-keyring feature) falling back to 0o600 files; ncryptsec encrypted backups. Plugins: deep-link, opener, single-instance, window-state, dialog, updater (release builds only), process, global-shortcut, notification. Bundles external binaries: buzz-acp, buzz-agent, buzz-backend-kubernetes, buzz-dev-mcp, git-credential-nostr, buzz CLI.
-
-### Shared frontend infra
-RelayClient singleton (~970 ln) over NATIVE Rust WebSocket (Tauri Channels) — resilience stack: reconnect controller/policy/replay prioritizing visible channel, rate-limit gate w/ parsed hints, stall watchdog, closed-connection policy, first-event-gated history, query-invalidation bridging relay events into React Query, read-only + observer clients. kinds.ts mirrors kind.rs (plus curated kind sets for unread/timeline/aux fetches). Typed Tauri wrappers per domain (~20 modules). Feature-flag store over preview-features.json. E2E mock bridge (fake __TAURI_INTERNALS__ compiled only with --mode e2e).
-
-Testing: node test runner unit tests colocated; Playwright smoke (~170 spec files) + relay-backed integration + perf configs (typing latency, scroll smoothness); helpers w/ real Nostr test identities, seed builders, mandatory waitForAnimations, dual-relay harness, fake ACP agent fixture.
+29 feature modules covering agents, channels, messages, forum, huddle (voice with STT/TTS), projects/git, workflows, search, moderation, notifications, settings, and more. ~250 Tauri invoke commands across terminal, deep links, identity/keys, projects/git, relay, channels, media, agents, workflows, huddle, pairing, and workspace. Resilient RelayClient singleton with reconnect/replay, rate-limit gate, stall watchdog, and React Query invalidation bridge. Full line-level analysis in `discovery/buzz/buzz-desktop.md`.
 
 ---
 
@@ -313,48 +176,20 @@ Directly relevant to "desktop CLI agent management and operations platform":
 
 ---
 
-## ROUND 3 ADDENDUM — orchestrated deep-dive wave (reports in `discovery/round3/`)
+## ROUND 3 ADDENDUM — orchestrated deep-dive wave
 
 | Report | Coverage |
 |---|---|
-| `round3/buzz-desktop.md` (68KB, file:line cited) | Agents feature + managed_agents runtime: kind 24200 observer-frame ingestion, runtime reconciliation plans, per-community active-turn store save/restore, card minting via OpenAI-key-backed mint_agent_card, ~/.buzz nest dirs, spawn/readiness/supervision/retention lifecycle. Projects + project_git* commands: CLI-shelled git ops, NIP-34-style signed PR/issue events (kinds 1618–1633), CAS-safe merge flow with conflict recovery. Huddle audio: Opus 32kbps WS transport, NetEq jitter buffer + playout, sherpa-onnx Parakeet STT, Pocket TTS 12 voices, 4-path barge-in, push-to-talk w/ generation counters. RelayClient stack (~1,084 lines): reconnect/replay prioritizing visible channel, rate-limit gate w/ parsed hints, passive stall watchdog, React Query invalidation bridge |
-| `round3/buzz-agent-crates.md` (31KB) | buzz-acp: NIP-42 connect/auth handshake, per-channel batching/dedup queue, pool claim/return lifecycle, stdio JSON-RPC ACP client w/ idle+hard timeouts, evalexpr subscription filters, heartbeat event loop, BUZZ_* env injection chain. buzz-agent: LLM provider abstraction incl. Databricks OAuth PKCE, session loop w/ handoff self-summarization, MCP env sandboxing. buzz-cli: REST/retry/media patterns, 64KiB content limits. buzz-workflow: trigger evaluation, cron scheduling, approval-suspension internals — all file:line cited |
-| `round3/mc-frontend-buzz-clients.md` (26KB) | Also covers buzz mobile relay transport internals (relay_socket/relay_session/rate-limit gate/signed-event relay/media upload), channels feature structure, pairing crypto; web isomorphic-git browser client + NIP-98 signer |
+| `discovery/buzz/buzz-desktop.md` | Agents, managed agents, projects/git, huddle audio, RelayClient stack |
+| `discovery/buzz/buzz-agent-crates.md` | buzz-acp, buzz-agent, buzz-cli, buzz-dev-mcp, buzz-workflow internals |
+| `discovery/buzz/bz-pair-relay-cli.md` | Pairing protocol, NIP-AB, QR format, SAS verification |
 
 ---
 
-## ROUND 2 DEEP DIVE — buzz-relay internals (handlers, git hosting, tenancy, connections)
+## ROUND 2 DEEP DIVE — buzz-relay internals
 
-### R2.1 Layout (src/, ~79 files)
-main.rs (2,136: config, pools, migrations, background tasks, graceful shutdown) · router.rs (561: all HTTP routes, CORS, body limits, SPA fallback) · state.rs (2,198: AppState, connection manager, community connection control) · config.rs (1,558 env-driven w/ validation) · connection.rs (1,025 WS lifecycle) · subscription.rs (1,764 (channel,kind) fan-out index) · admission.rs (138 rate-limit seam) · tenant.rs (304 row-zero host binding) · protocol.rs (424 NIP-01 parsing) · metrics/telemetry/nip11 · invite_token.rs (HMAC) / webhook_secret.rs · push_runtime.rs (665 durable NIP-PL matcher + gateway worker) · storage_sweep.rs (1,008 hourly S3 usage sweep) · workflow_sink.rs (648 relay-side ActionSink emitting kind:9) · mesh_boot.rs (700 inter-relay mesh) · conformance/ (TLA+ trace emission at ingest/read boundary). Dirs: handlers/ (18), api/ (bridge 3,523; media 1,257; invites 1,673; operator 1,160; workflows; nip05; admin/) + api/git/ (10 files), audio/ (huddle voice: handler 1,404, join 2,837, room 728), tunnel/ (mesh tunnel sessions: Redis fenced lease directory 923, reliable-stream routing 866).
-
-### R2.2 Handlers (key logic)
-- **event.rs** (2,301): verify → route ephemeral 20000–29999 (WS-only; presence special-case kind 20001), encrypted observer frames 24200, gift wraps, else ingest pipeline. Per-subscriber pre-encoded frame cache (serialize once for N subs); bounded Prometheus kind labels; viewer-private kinds (30622 DM visibility, 44200 agent turns) strip p-tags for non-recipients.
-- **ingest.rs** (4,848): "two doors, one room" — WS EVENT and POST /events share ingest_event: signature verify (spawn_blocking) → timestamp freshness ±15 min → tenant/channel scoping → per-kind envelope validators (edits 40003 ownership, votes 45002 targets, diffs 40008, engrams 30174, personas 30175, team catalogs 30178, projects 30621, repo state 30618, turn metrics 44200, reminders 30300…) → scope authorization per kind → storage → command-kind routing. Reactions (kind 7) atomic dedup upsert pre-storage; deletions derive channel from target; create-group compensates (deletes channel) on later failure. TLA+ conformance traces at accept/reject.
-- **req.rs** (2,171): MAX_SUBSCRIPTIONS 1024/conn, FILTER_QUERY_CONCURRENCY 4, MAX_EXPLICIT_CHANNEL_VALUES 128 #h values; visibility gating (p-gated kinds 403 without kinds, author-only, result-gated, DM event_visible_to_reader); NIP-50 search → FTS.
-- **auth.rs** (324): pure challenge verification; extracts NIP-OA agent auth tag for owner-delegation membership.
-- **command_executor.rs** (1,486): transactional command kinds (41010–41012 DM ops, 30620 workflow defs, 46020 triggers, 46030–46031 approvals): validate → tx insert → mutations → commit; webhook secret generation (SHA-256).
-- **side_effects.rs** (3,330): group discovery events 39000–39002, member notifications, NIP-43 lists, archival events, thread summaries; evicts kicked users' live subscriptions by pubkey-in-community walk.
-- **relay_admin.rs** (817): NIP-43 kinds 9030–9033 processed directly, never stored; role changes owner-only.
-- **moderation_commands.rs** (697): 9040–9044 community-global, fresh timestamp required, channel-scoped tokens rejected; ban = upsert + audit + live disconnect + notice DM.
-- **moderation_authz.rs** (313): single capability seam; roles only from tenant-scoped tables; v1 grid (owner/admin all; channel owner/admin DeleteMessage/Kick in-channel).
-- **moderation_notices.rs** (368): relay-signed notice DMs via moderation key; never names reporters or quotes report notes.
-- **report.rs** (298): reports are "signals, never triggers"; e-targets resolved in-tenant only (never cross-tenant search); x-targets = (community_id, sha256).
-- **identity_archive.rs** (702): consent paths SelfSigned/Owner/Admin; live kind:0 profile must attest requester; mutates archived_identities + emits relay-signed deltas before storing request.
-- **push_lease.rs** (720): strict serde deny_unknown_fields envelope validation; push kinds [7, 9, 1059, 40007, 46010]; tenant from TenantContext never decrypted origin.
-- Also: product_feedback (category enum, ≤32KB body, imeta verified vs media sidecar), imeta validation shared module, community_provisioning (operator allowlist above tenants).
-
-### R2.3 Git hosting on object storage
-Routes: GET info/refs (120s), POST git-upload-pack (300s, 64MB decoded gzip-bomb cap), POST git-receive-pack — all NIP-98 auth via GitAuth extractor; reads require active membership in the repo's bound channel (no public repos v1). **Repos are not on disk**: content-addressed create-only pack writes (SHA-256 keys, If-None-Match: *), single pointer object per repo swapped via ETag If-Match CAS (412 = semantic LostRace outcome), manifest validation (safe refnames/OIDs/pack keys), startup conformance probe (32-way race × 3 rounds) as fail-closed deployment gate; hydrate.rs materializes ephemeral bare repos into scratch for read/write with LRU pack cache. Push flow: no per-repo lock — writer serialization IS the pointer CAS (loser's work discarded, accepted v1 tradeoff); cas_publish (pack→idx→manifest→pointer CAS) completes before any 2xx. Policy hooks: injected bash pre-receive hook reads old/new/ref lines, FF-detects via merge-base against quarantine dirs, POSTs to loopback-only /internal/git/policy (HMAC-SHA256 over length-prefixed payload + 30s TTL, fail-closed); policy resolves kind:30617 protections, grants owner authority to repo key or verified managed-agent owner (NIP-OA), maps Bot→Member role, evaluates push perms per-ref.
-
-### R2.4 Multi-tenancy (row-zero)
-bind_community normalizes host (lowercase, strip trailing dot/default ports, keep IPv6 brackets) → HostResolver queries communities table UNIQUE(lower(host)); empty host fails closed BEFORE lookup with byte-identical UnmappedHost error (no probing). No default/fallback tenant. WS door binds before upgrade (no frames read unbound; generic 404 never echoes host). Every HTTP surface repeats row zero independently (bridge/media/invites/operator/workflows/nip05/git/audio). Server-internal paths use bind_deployment_community over the deployment's own relay_url authority (not a fallback). community_id enforced in: every DB query, membership checks ("admitting a pubkey to community A never admits it to B"), NIP-OA backfill, git pointer keys + BUZZ_COMMUNITY_ID in HMAC-bound hook callback, subscription SubEntry carries CommunityId, Redis topics namespaced, moderation roles tenant-scoped, deletion serving fences validated at boot (refuses unsafe start).
-
-### R2.5 Connection management
-Admission: check_principal over Redis-backed RateLimiter trait; Exceeded → rejection w/ retry hint; Redis down → fail-closed (separate metric reason=unavailable). WS budget = fixed-window 5s burst (per-sec × 5) so desktop startup bursts don't trip averages. Per-type limits from config: human_messages_per_min / human_api_calls_per_min / human_ws_events_per_sec; invite claims process-local 10/pubkey/60s bounded 10k pubkeys. Lifecycle: global conn semaphore try_acquire (no queuing) → row-zero binding → challenge → 5s AUTH_TIMEOUT cancels slot-holders → send_loop (batches ≤64 frames, control-frame priority) + heartbeat + recv loops; handler_semaphore caps concurrent handlers. Slow clients: try_send backpressure counter, grace_limit cancellations metricized, success resets. Frame limits set at parser level (default 512KB) + app-level defense in depth. Shutdown: readiness 503 + shutting_down; drain closes live conns w/ close code 1012 (Service Restart) after jittered delay (≤20s); exactly one 1012 flush guaranteed (unit-tested). Health router separate port no-auth: /_liveness, /_readiness (Postgres ping + Redis pool + deletion fences, 2s timeout), /_status, /_mesh. Audio: tighter caps (4KB Opus frames, 30s heartbeat, 25 peers/room), try_send everywhere (drops tolerated, never queued), cross-pod joins arbitrated by Redis fenced CAS leases validating {session_id, generation, owner_runtime_id}.
+Function-level analysis of buzz-relay handlers, git hosting, multi-tenancy, and connection management. Covers: handler event pipeline (ingest.rs, req.rs, auth.rs, command_executor.rs, side_effects.rs, moderation), git hosting on object storage (CAS pointer-swap, policy hooks), multi-tenancy (host-derived TenantContext, row-zero binding), connection management (admission control, WS lifecycle, slow-client handling, health endpoints). Full detail in `discovery/buzz/bz-db-schema.md` §2 and `discovery/buzz/bz-ops-deploy-admin.md` §3.
 
 ---
-*Round-1 coverage preserved below; Round 2 added function-level depth on buzz-relay (the largest unread area).*
-
-*Scan coverage: README/AGENTS/ARCHITECTURE read in full; all 8 VISION docs + NOSTR/TESTING/RELEASING/GOVERNANCE + preview-features summarized; full kind.rs registry extracted; CLI command surface extracted from lib.rs enums; acp config fields, dev-mcp tool list, persona format, agent crate structure, git/pairing crate READMEs captured; desktop (29 features, ~250 Tauri commands, shared infra, testing), mobile, web, admin-web, deploy, migrations, docs, tooling covered via structured deep-scan. Not read line-by-line: buzz-relay handler internals (covered by ARCHITECTURE.md + Round-2 deep dive), buzz-db query bodies, buzz-acp/buzz-agent full implementations (structure + config captured), individual desktop component files.*
+*Round-1 coverage preserved below; Round 2 added function-level depth on buzz-relay. Scan coverage: README/AGENTS/ARCHITECTURE read in full; all 8 VISION docs summarized; full kind.rs registry extracted; CLI command surface extracted; desktop (29 features, ~250 Tauri commands), mobile, web, admin-web, deploy, migrations, docs, tooling covered. Not read line-by-line: buzz-relay handler internals (covered by Round 2 deep dive), individual desktop component files.*
 

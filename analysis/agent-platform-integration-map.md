@@ -3,13 +3,13 @@
 > Task: ATLAS R5-3.1 (Group 3 synthesis; claimed IN_PROGRESS in `.Fabrica-atlas-board/Fabrica-atlas-tasks.md`; task `task_d7b7e871fbb7`).
 > Input basis (all READ-ONLY, verified on disk 2026-08-23):
 >
-> - `discovery/round4/fa-ipc-watchers.md` (IPC surface + file watchers)
-> - `discovery/round4/fa-plugin-runtime.md` (plugin host runtime)
-> - `discovery/round4/fa-agent-hooks-probes.md` (agent-hooks / CLI probes)
-> - `discovery/round4/fa-pty-terminal.md` (PTY/terminal subsystem)
-> - `discovery/round4/fa-command-palette-search.md` (command palette / search / keybindings)
+> - `discovery/fabrica-app/fa-ipc-watchers.md` (IPC surface + file watchers)
+> - `discovery/fabrica-app/fa-plugin-runtime.md` (plugin host runtime)
+> - `discovery/fabrica-app/fa-agent-hooks-probes.md` (agent-hooks / CLI probes)
+> - `discovery/fabrica-app/fa-pty-terminal.md` (PTY/terminal subsystem)
+> - `discovery/fabrica-app/fa-command-palette-search.md` (command palette / search / keybindings)
 >
-> Cross-referenced: `analysis/round4-findings-digest.md`, `analysis/cross-project-notes-r4.md`, `analysis/similarities-gaps.md`, `analysis/production-architecture.md`.
+> Cross-referenced: `analysis/findings-and-recommendations.md`, `analysis/task-notes.md`, `analysis/cross-repo-analysis.md`, `analysis/production-architecture.md`.
 > All `src/...` paths are relative to `../Fabrica-app/` unless prefixed `_sources/`. Every claim cites the discovery report section that carries the underlying `file:line` evidence. Nothing outside `.Fabrica-atlas-board/` was written.
 
 ---
@@ -196,74 +196,15 @@ The fourth flow is the watcher stack (`fa-ipc-watchers.md` §5), which no refere
 
 ---
 
-## 5. Extension Points for the Atlas Project (After-Rebrand insertion seams)
+## 5. Verification Notes
 
-Ranked by leverage-to-effort, each verified present in source:
+- All five source reports were read from disk in full (or, for `fa-ipc-watchers.md` and `fa-command-palette-search.md`, in full across two reads each); their internal citations were themselves spot-verified by R4 verification passes: fa-plugin-runtime (wave-5 PASS), fa-agent-hooks-probes (wave-6 PASS incl. C7 count correction), fa-command-palette-search (wave-4 PASS), fa-ipc-watchers (round4 base PASS), fa-pty-terminal (hygiene-only — content treated as high-confidence but factually unverified by a second worker; flagged for verification).
+- Verification statuses for all reports: see `analysis/findings-and-recommendations.md` §1.
 
-1. **Palette "Agents" section via `CmdJQuickAction` shape** — the action layer is only 6 built-ins + plugin entries (`cmd-j/quick-actions.ts:59-182`); agent catalog and agent quick commands are fully plumbed but absent from the palette today (verified non-import, palette §7.3.3, §9 rows 1-2). Cheapest high-value win; telemetry sources `'command_palette'/'workspace_jump_palette'` already exist so no schema migration (palette §7.3.4).
-2. **Promote `TuiAgentConfig` → explicit `Runner.spawn(SpawnSpec)`** (digest FA-T1, `round4-findings-digest.md:124`; fit verdict HIGH/LOW-risk, hooks §9): collapse 14 copy-paste `agentHooks:*Status` handlers into one dispatcher; move per-provider parsers/interrupt quirks out of the 2,907-line `server.ts` into profile-owned modules (hooks §9 friction items 1-3).
-3. **One guard stack at the IPC boundary** — `register-core-handlers.ts:109-234` is THE single enforcement point where MC's ordered guard stack should land (digest FA-T2 `round4-findings-digest.md:125`; notes-r4 FA-N7 line 195-208 including spend-ladder fleet brake).
-4. **Decision-gate escalation on existing detection** — OSC-133 + interrupt/question inference helpers (pty §9.2; hooks §6) are the substrate MC's decision gates freeze/dispatch against (digest FA-T3, `:126`). No new detection engineering needed — only a decision queue consuming signals that already flow.
-5. **Plugin event-set growth** — the closed enum + per-event payload-schema pattern extends cleanly; adding `run.started/finished/token.spend` domain events is additive (plugin S12.3c). This turns plugins into first-class fleet observers.
-6. **Agent-capability packages on the existing SDK shape** — `commands ≈ tools, events.on ≈ triggers, host.call ≈ gated side-effect API, grantedCapabilities ≈ permissions`; `agents` manifests already reserved in contributions (`plugin-manifest.ts:116-119`) — adoptable "nearly verbatim" (plugin S12.1).
-7. **Supervision reader without pane ownership** — `pty:getMainBufferSnapshot` + serializer registry + runtime tail buffers let an external manager/fleet view read agent output safely (pty §9.4); combine with `agentStatus:getSnapshot` pull lane (hooks §7) for a supervision snapshot API.
-8. **Multi-host by construction** — Flows A/B/C all have relay/WSL twins (relay PTY handler pty §8; `relay/agent-hook-server.ts` + `wsl-hook-relay-*` hooks §4.4; relay plugin host-call parity plugin S9), so fleet scope does not require re-architecting any flow — only the missing supervision layers of §7.
+## 6. Scan-Coverage Statement
 
----
+**Read (this session):** `discovery/fabrica-app/fa-ipc-watchers.md` (lines 1-425, complete), `discovery/fabrica-app/fa-plugin-runtime.md` (226 lines, complete), `discovery/fabrica-app/fa-pty-terminal.md` (405 lines, complete), `discovery/fabrica-app/fa-command-palette-search.md` (788 lines, complete across offsets), `discovery/fabrica-app/fa-agent-hooks-probes.md` (241 lines, complete), `.Fabrica-atlas-board/Fabrica-atlas-tasks.md` (checkpoint + group tables + session ledger), grep survey of `analysis/` for cross-references.
 
-## 6. Integration Risks & Gaps (within the current composition)
-
-**R1 — Contract-rename blast radius.** Channel strings appear simultaneously in 65 main files, 656 preload sites, ~78 renderer namespaces (ipc §8.4); renaming any namespace is a coordinated three-layer migration (digest FA-T11). Same pattern for `agentHooks:*Status` collapse (hooks §9 friction 1: preload + web stub must move together).
-
-**R2 — Single-file concentration at two chokepoints.** `ipc/pty.ts` (7,745 lines, deliberate, pty §1) and `main/agent-hooks/server.ts` (2,907 lines, header documents why unsplit, hooks §10.3): every new provider behavior lands in these files; both are the exact places fleet features will want to modify.
-
-**R3 — Provider-addition boilerplate ≥6 files** (types union, TUI config row, service dir, 4 registry arrays, IPC handlers, preload, web stub) — measured, hooks §10.2. Unscaled, this is the growth ceiling of the observe plane.
-
-**R4 — Plugin sandbox honesty vs autonomous agents.** Post-`activate()` plugin code holds raw Node power inside its own process; the sandbox constrains only host-mediated access (plugin S1 honesty note, S4.7). Least-privilege agent packages need a restricted runtime mode (plugin S12.5a). Relatedly the host API has **no exec/spawn/fs method** — agent packages will demand one, forcing the audited-execution primitive `terminal.sendText` only gestures at (plugin S12.5b).
-
-**R5 — Token-in-child-env inheritance.** `FABRICA_AGENT_HOOK_TOKEN` is readable by anything spawned in the pane; mitigated by loopback bind but not secret from the agent itself (hooks §10.4). An agent can therefore impersonate its own pane's feed — acceptable today because disposition gates on launch tokens (hooks §6), but a spoofing surface once spend/actions hang off status.
-
-**R6 — Passive staleness + fail-open posture.** 30-min lazy TTL decay (hooks §5.2, §7) and fail-open 204 responses (hooks §6) are right for never-blocking-the-CLI, wrong for supervision semantics: a supervisor needs positive liveness (heartbeat/TTL enforcement), not lazy decay — cf. buzz's TTL=3×heartbeat pattern (notes FA-T16, `cross-project-notes-r4.md` area; digest `:281`).
-
-**R7 — Dead surface.** `agentHooks:*Status` channels have no desktop-renderer consumer — CLI/diagnostics-only today (hooks §10.1). Any fleet UI wiring them inherits a channel family nobody exercises end-to-end.
-
-**R8 — Palette blind spot.** No generic palette-open/execute analytics event; agent catalog + quick commands absent from palette; slash-command control confined to native chat (palette §9 row 7). Operators cannot currently discover the agent fleet from the primary control surface.
-
-**R9 — Load-bearing exclusivity of the watcher stack.** Fabrica-exclusive among the three repos; crash isolation, canary, fuses, removal fencing, remote intent persistence are all load-bearing and must be preserved verbatim through any framework change (ipc §8.3; digest FA-T11).
-
-**R10 — Pane-authority evolution.** Ownership arbitration between local PTY ids and runtime terminal handles (`agent-pane-authority-ownership.ts`, retire/transfer channels ipc §4.12) is recent machinery; multi-writer agent orchestration will stress it (the anti-redirect invariant of plugin S9.terminal.sendText shows the failure mode is already known).
-
----
-
-## 7. What Is Missing to Reach MC/buzz-Level Fleet Supervision
-
-Framing: FA's substrate exceeds both references at transport and observation (push IPC everywhere vs MC's zero-WebSockets polling — ipc §7.1; 18-source hook fleet vs MC's single hard-coded binary — digest `:56`; the watcher stack absent in both — ipc §7.2). What FA lacks is the **supervision layer above the substrate**. Gap-by-gap:
-
-| # | Missing capability | Reference blueprint | Evidence / anchor |
-|---|---|---|---|
-| M1 | **Approval-gated autonomy for irreversible actions** (risk table, bypass detection, dry-run rails) | MC 8-state FSM + execute-route guard stack | digest FA-T2 `round4-findings-digest.md:125`; mc-execute-guards 13-layer order-of-eval (per `analysis/cross-project-notes-r4.md` FA-N7) |
-| M2 | **Decision-gate escalation** (runaway/looping runs freeze; structured Retry/Skip/Stop questions injected into retry prompts) | MC decisions.json 3-layer gating + retry-guidance injection | digest FA-T3 `:126`; detection substrate already present (pty §9.2, hooks §6) |
-| M3 | **Durable run/task/approval persistence** — FA supervises via memory + JSON snapshots (last-status.json, hooks §4.3) with no run history model | buzz SQL quartet (status enums as FSMs, SHA-256 scoped approval tokens, TOCTOU-safe transitions, at-most-once claims) | digest FA-T6 `:129`; redesign note digest FA-T4 `:127` ("replace MC's JSON+PID-probing with FA IPC+SQLite") |
-| M4 | **Persistent retry queue + bounded continuation chains + global concurrency slots** shared by ALL entry points through one health monitor | MC workflow engine §7/§9a | digest FA-T4 `:127` |
-| M5 | **Readiness-gated spawn + orphan sweep + restart policy for long-running agents** — FA has adoption (pty §2.1) and continuity (grace timers, serialize/revive, replay buffers, stable panes — pty §9.6) but no pre-spawn readiness computation, no `BUZZ_MANAGED_AGENT`-style ownership marker, no quiescence-window auto-restart | buzz managed-agent lifecycle (readiness before spawn `readiness.rs:402`; receipt atomicity `runtime.rs:978-982`; orphan proof env `orphan_sweep.rs:110-119`; SIGTERM→SIGKILL groups `process.rs:281`; 3-min quiescence `autoRestartPolicy.ts:6-9`) | `similarities-gaps.md:162` (G-BZ-15, "the precise local fleet-supervisor blueprint FA lacks") |
-| M6 | **Usage/cost ledger WITH budget enforcement** — FA captures per-provider usage channels (`${prefix}:getSummary/getDaily`, ipc §4.12) but no budgets, attribution, or pre-flight estimates on runs | buzz `agent_metric_index` shape + MC-sourced budget requirement | digest FA-T7 `:130` |
-| M7 | **Operator alerting depth** — FA has the full attention pipeline (tray pre-gate, burst dedupe, click-to-pane, 13-agent copy normalization) but MC proves four gaps matter: dead-backend signal, seen-vs-acknowledged separation, aging escalation, outbound transports | FA pipeline × MC notification lessons | digest FA-T13 `:278` |
-| M8 | **Searchable agent-output archive with privacy discipline** (generated-tsv indexing, kind allowlists, per-hit re-auth) | buzz search crate patterns | digest FA-T15 `:281` |
-| M9 | **Fleet live-presence plumbing** (refcount+debounce topic manager, heartbeat-scaled TTL) replacing passive 30-min decay (R6) | buzz pubsub presence | digest FA-T16 `:281` |
-
-Sequencing note (from `cross-project-notes-r4.md` FA-N10): task model (M3/M4) → guard stack (M1) → decision queue (M2) is the dependency order. [Correction 2026-08-23, R6-F1FIX per verify/r6-v7-synthesis-consistency.md F-1: this line previously listed guard stack → decision queue → task model, reversing the FA-N10 source order (task model first FA-N9, guard stack second FA-N7, decision queue third FA-N8 — cross-project-notes-r4.md:290-294).] M5/M6/M9 harden the local single-host fleet before any multi-host expansion, which the relay twins of §5.8 make cheap afterwards.
-
----
-
-## 8. Verification Notes
-
-- All five source reports were read from disk in full (or, for `fa-ipc-watchers.md` and `fa-command-palette-search.md`, in full across two reads each); their internal citations were themselves spot-verified by R4 verification passes: fa-plugin-runtime (wave-5 PASS, `verify/round4-wave5-spot-verification.md`), fa-agent-hooks-probes (wave-6 PASS incl. C7 count correction, ledger line 1 of this task file + `verify/round4-wave6-spot-verification.md`), fa-command-palette-search (wave-4 PASS, `verify/round4-wave4-spot-verification.md`), fa-ipc-watchers (round4 base pass, `verify/round4-spot-verification.md`), fa-pty-terminal (hygiene-only per digest closure addendum caveat `round4-findings-digest.md:267` — content treated as high-confidence but factually unverified by a second worker; flagged here for Round-5 verification planning).
-- Digest numbers used: FA-T1..T18 locations cited inline from `analysis/round4-findings-digest.md`.
-
-## 9. Scan-Coverage Statement
-
-**Read (this session):** `discovery/round4/fa-ipc-watchers.md` (lines 1-425, complete), `fa-plugin-runtime.md` (226 lines, complete), `fa-pty-terminal.md` (405 lines, complete), `fa-command-palette-search.md` (788 lines, complete across offsets), `fa-agent-hooks-probes.md` (241 lines, complete), `.Fabrica-atlas-board/Fabrica-atlas-tasks.md` (checkpoint + group tables + session ledger), grep survey of `analysis/` (round4-findings-digest.md FA-T block + caveats read via targeted matches; cross-project-notes-r4.md FA-N1/N7/N10 areas; similarities-gaps.md G-BZ-15 region).
-
-**Not re-read (relied on cited reports + verification passes):** primary sources under `../Fabrica-app/src` and `_sources/` (synthesis task; no direct source scan performed this session — all file:line anchors are second-hand from the five verified reports, per the verification notes in §8); `mc-workflow-engine.md`, `mc-decision-gates.md`, `bz-db-schema.md`, `bz-search-pubsub.md` bodies (consumed only via digest/cross-project-notes citations).
+**Not re-read (relied on cited reports + verification passes):** primary sources under `../Fabrica-app/src` and `_sources/` (synthesis task; no direct source scan performed this session — all file:line anchors are second-hand from the five verified reports, per the verification notes in §5); `mc-workflow-engine.md`, `mc-decision-gates.md`, `bz-db-schema.md`, `bz-search-pubsub.md` bodies (consumed only via digest/cross-project-notes citations).
 
 **Written:** this file only, inside `.Fabrica-atlas-board/analysis/`. No file outside `.Fabrica-atlas-board/` created or modified.

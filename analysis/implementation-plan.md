@@ -1,21 +1,18 @@
-# Atlas Phased Roadmap — Foundation → Capability Adoption → Launch Readiness
+# Atlas Implementation Plan — Merged Document
 
-> **Task:** ATLAS R5-3.4 (Group 3 synthesis, Round 5) · claimed IN_PROGRESS in `.Fabrica-atlas-board/Fabrica-atlas-tasks.md` Group 3 table.
-> **Deliverable:** `analysis/atlas-phased-roadmap.md` (this file) — phased implementation proposal for the Fabrica-app build-out.
-> **Inputs (all READ-ONLY, verified on disk 2026-08-23):**
-> - `analysis/atlas-executive-summary.md` (R5-3.5) — verified-capability inventory §1, adoption priorities §2, phase-plan summary §4, open PM questions §5
-> - `analysis/cross-project-notes-r4.md` (R4-3.4) — paste-ready notes FA-N1…FA-N10
-> - `analysis/cross-project-notes-r5.md` (R5-3.6) — paste-ready notes FA-N11…FA-N17
-> - `analysis/r5-agent-platform-integration-map.md` (R5-3.1, verified 45/45 by `verify/round5-wave2-spot-verification.md`) — composition flows §3, shared contracts §4, extension seams §5, gaps M1–M9 §7
-> **Companion docs:** `analysis/atlas-risk-register.md` (R5-3.3, in flight), `analysis/digest-v2-refresh.md` (R5-3.2, in flight).
->
-> Path conventions follow `atlas-executive-summary.md`: `src/...` = `../Fabrica-app/src/...`; donor paths under `_sources/`; discovery-report paths relative to `.Fabrica-atlas-board/`. All file:line anchors are second-hand from the cited VERIFIED-PASS reports (their citation accuracy is covered by named verify passes).
+> **Source:** This document merges `atlas-phased-roadmap.md` (R5-3.4) as the core with selected sections from `atlas-executive-summary.md` (R5-3.5). The roadmap's detailed phase plan, dependencies, and PM questions are preserved in full. Only non-duplicate content from the executive summary is added: the TL;DR, the consolidated risk register, and one additional PM question not covered by the roadmap.
 
 ---
 
-## 0. Roadmap Model at a Glance
+## TL;DR (30 seconds)
 
-The Round-1 build sequence (`production-architecture.md` §7), refined by Round-4 adjustments (`production-architecture.md` R4-C) and the dependency order established in FA-N10 (`cross-project-notes-r4.md:284-299`, restated in `r5-agent-platform-integration-map.md` §7 sequencing note), compresses into three delivery phases:
+Fabrica-app is already a best-in-class **single-host agent desktop substrate** — transport, execution, observation, extension, and operator-control layers all exist and compose via verified shared contracts. What it is NOT yet is a **fleet-supervision platform**: it lacks durable run/task persistence, approval gates on irreversible actions, spend enforcement, readiness-gated spawn/restart, and operator escalation queues. Mission-control supplies the supervision *patterns* (guards, decision gates, task FSM); buzz supplies the durability *patterns* (SQL state machines, cost ledger, presence, search). The recommended build is supervision-on-top-of-substrate in phases, with two hard rules: preserve the watcher stack and IPC channel contract verbatim, and keep on-disk identifiers unchanged through any rebrand.
+
+---
+
+## Roadmap Model at a Glance
+
+The Round-1 build sequence (`production-architecture.md` §7), refined by Round-4 adjustments (`production-architecture.md` R4-C) and the dependency order established in FA-N10 (`cross-project-notes-r4.md:284-299`, restated in `agent-platform-integration-map.md` §7 sequencing note), compresses into three delivery phases:
 
 | Phase | Theme | One-line scope | Exit criterion |
 |---|---|---|---|
@@ -27,15 +24,15 @@ Two standing rules govern every phase (both VERIFIED-PASS findings):
 
 1. **Preserve verbatim:** the crash-isolated watcher stack (`fa-ipc-watchers.md:407`; FA-T11 `round4-findings-digest.md:134`; integration-map risk R9) and the `<namespace>:<action>` IPC channel contract (`fa-ipc-watchers.md` §8.4; integration-map risk R1).
 2. **Keep on-disk identifiers unchanged** through any rebrand — display surfaces only (`fa-settings-config-datadirs.md:286-309`; FA-T14). Renaming safeStorage keys orphans ALL stored ciphertext; Chromium partition strings orphan data; ~130 `FABRICA_*` env vars cascade.
-3. **House reliability grammar everywhere** (R4-C item 5, via `production-architecture.md:208`): generation counters, fail-closed liveness proofs, atomic claim-rename protocols, env allowlists, idempotency ledgers — copy this grammar into every new subsystem (`round3/fabrica-app-main-subsystems.md` closing summary).
+3. **House reliability grammar everywhere** (R4-C item 5, via `production-architecture.md:208`): generation counters, fail-closed liveness proofs, atomic claim-rename protocols, env allowlists, idempotency ledgers — copy this grammar into every new subsystem (`discovery/fabrica-app/fabrica-app-main-subsystems.md` closing summary).
 
 ---
 
-## 1. PHASE A — Foundation & Preservation
+## PHASE A — Foundation & Preservation
 
-### 1.1 What Exists to Build On (the foundation inventory)
+### What Exists to Build On (the foundation inventory)
 
-All five subsystems below were mapped end-to-end and are VERIFIED-PASS (`r5-agent-platform-integration-map.md` §1–§3; capability detail in `atlas-executive-summary.md` §1):
+All five subsystems below were mapped end-to-end and are VERIFIED-PASS (`agent-platform-integration-map.md` §1–§3; capability detail in `atlas-executive-summary.md` §1):
 
 | # | Asset | Anchor evidence |
 |---|---|---|
@@ -49,7 +46,7 @@ All five subsystems below were mapped end-to-end and are VERIFIED-PASS (`r5-agen
 
 Honest verdict (integration-map §1): best-in-class **single-host agent desktop substrate**; NOT yet a fleet-supervision platform. Phase A protects the former; Phase B supplies the latter.
 
-### 1.2 Phase A Scope
+### Phase A Scope
 
 1. **Preservation fences (pre-work, cheap, do first)** — declare the watcher stack and channel contract as frozen public API: no renames without a coordinated three-layer migration plan (65 main files / 656 preload sites / ~78 renderer namespaces per `fa-ipc-watchers.md` §8.4); reviewer checklist against the watcher stack's load-bearing behaviors (canary deadlock detector, crash fuse 3-per-120s, WSL pollers, SSH intent persistence, removal fencing).
    *Evidence:* FA-T11 (`round4-findings-digest.md:134`); integration-map risks R1, R9.
@@ -59,13 +56,13 @@ Honest verdict (integration-map §1): best-in-class **single-host agent desktop 
    *Evidence:* `cross-project-notes-r4.md` FA-N4 (lines 111-132); integration-map seam 1; wave-4 PASS.
 4. **Chokepoint awareness protocol** — `ipc/pty.ts` (7,745 lines) and `agent-hooks/server.ts` (2,907 lines) concentrate all future work (integration-map risk R2); establish contribution guidelines before Phase B features start landing inside them.
 
-### 1.3 Dependencies
+### Dependencies
 
 - None external — everything in Phase A operates on verified existing code.
 - Phase A item 3 (B5) must precede any Phase B operator-facing work so agents become discoverable from the primary control surface before the fleet grows.
 - Blocks Phase C item on telemetry only insofar as event names chosen here persist (new brand-prefixed events per breaking-change convention — FA-N6 item 3, `telemetry-events.ts:1424,:1427,:1469-1471`).
 
-### 1.4 Open PM Questions (Phase A)
+### Open PM Questions (Phase A)
 
 1. Accept the keep-on-disk-identifiers rebrand strategy formally (exec-summary Q1)? Leaving legacy names in artifacts vs breaking safeStorage/partitions.
 2. Confirm appId stays unchanged, or fund a parallel-install migration story (exec-summary Q2; FA-T9, `fa-autoupdate-build.md:231-245`).
@@ -73,15 +70,15 @@ Honest verdict (integration-map §1): best-in-class **single-host agent desktop 
 
 ---
 
-## 2. PHASE B — Capability Adoption from mission-control / buzz
+## PHASE B — Capability Adoption from mission-control / buzz
 
 > Donor repos are READ-ONLY references; patterns port, code does not. Every adoption item below maps to a paste-ready note (FA-N1…N17) whose fix-before-port register MUST be applied during the port — porting verbatim imports documented defects (exec-summary risk 8).
 
-### 2.1 Ordering Rule (FA-N10)
+### Ordering Rule (FA-N10)
 
 Task model → guard stack → decision queue; then hardening; then expansion (`cross-project-notes-r4.md:284-299`). Guards before FSM invites hand-inlined per-route copies — exactly MC's implementation flaw. The R5 chain-dispatch material (FA-N11/N12/N13) slots into hardening after the task/persistence layer exists, since its ledger shapes presuppose a durable task store.
 
-### 2.2 B-Stage 1 — Task Model + Guards (P0)
+### B-Stage 1 — Task Model + Guards (P0)
 
 | Item | Adopt | From | Note | Key evidence |
 |---|---|---|---|---|
@@ -90,7 +87,7 @@ Task model → guard stack → decision queue; then hardening; then expansion (`
 
 **Dependencies:** B1.1 strictly before B1.2 (guard layers operate ON the FSM states). Both before anything else in Phase B.
 
-### 2.3 B-Stage 2 — Decision Queue + Durable Persistence (P0)
+### B-Stage 2 — Decision Queue + Durable Persistence (P0)
 
 | Item | Adopt | From | Note | Key evidence |
 |---|---|---|---|---|
@@ -99,7 +96,7 @@ Task model → guard stack → decision queue; then hardening; then expansion (`
 
 **Dependencies:** B2.1 hooks into run entry points created by B1.1; B2.2 gives B2.1 its transactional store (fixing W2 structurally rather than patching it). Design note from FA-N17: keep BOTH intervention tiers but share ONE UI surface (MC fragments them across two UIs).
 
-### 2.4 B-Stage 3 — Fleet Hardening (P1)
+### B-Stage 3 — Fleet Hardening (P1)
 
 | Item | Adopt | From | Note | Key evidence |
 |---|---|---|---|---|
@@ -113,7 +110,7 @@ Task model → guard stack → decision queue; then hardening; then expansion (`
 
 **Dependencies:** all of Stage 3 requires Stage 1-2 stores (retry ladders and reconcilers need the durable run/task model of B2.2; budget enforcement needs the guard boundary of B1.2). B3.1 is independent enough to run early/parallel — highest-leverage internal cleanup.
 
-### 2.5 B-Stage 4 — Capability Expansion (P2, after Stages 1-3 land)
+### B-Stage 4 — Capability Expansion (P2, after Stages 1-3 land)
 
 | Item | Adopt | From | Note | Key evidence |
 |---|---|---|---|---|
@@ -122,11 +119,11 @@ Task model → guard stack → decision queue; then hardening; then expansion (`
 | B4.3 | Fleet live-presence plumbing: refcount+debounce topic manager, heartbeat-scaled TTL (= 3× heartbeat) replacing passive 30-min decay | buzz pubsub | Exec-summary C3; fixes integration-map risk R6 (supervision needs positive liveness, not lazy decay) | FA-T16 (`:281`); W3 PASS |
 | B4.4 | Multi-host transport + hash-chained audit: buzz NIP job kinds 43001-43006 + observer frames + gate sets IF multi-host scoped; audit chain for operator actions | buzz relay | Exec-summary C4; relay twins already exist for Flows A/B/C (integration-map seam 8) making this cheap AFTER the supervision layers land; do NOT regress push IPC to MC-style polling either way | `bz-relay-event-kinds.md`; FA-T8 (`:131`); R4-2.3 PASS |
 
-### 2.6 Deliberately NOT Adopted (standing exclusions)
+### Deliberately NOT Adopted (standing exclusions)
 
 Per `production-architecture.md` §§8, R4-D: MC's JSON-file persistence and polling-over-HTTP transport; buzz Nostr multi-community tenancy concepts-as-code; buzz-workflow's unwired approval resume as-is (WF-08). Also excluded by note-level caveats: MC's triple-duplicated dispatch predicate, unlocked cross-process JSON RMW, non-atomic chain-critical writes (FA-N11 anti-patterns).
 
-### 2.7 Open PM Questions (Phase B)
+### Open PM Questions (Phase B)
 
 1. Kanban agent-write policy — may agents write the human planning kanban directly, or owner-only? Must be decided BEFORE B1.1 ports (FA-N15 item 2; exec-summary Q5).
 2. Multi-operator approvals — MC hardcodes actor === "me"; does v1 need delegation-of-approval/approver roles? (FA-N15 item 7; exec-summary Q6.)
@@ -137,24 +134,24 @@ Per `production-architecture.md` §§8, R4-D: MC's JSON-file persistence and pol
 
 ---
 
-## 3. PHASE C — Launch Readiness
+## PHASE C — Launch Readiness
 
-### 3.1 Scope
+### Scope
 
 1. **Telemetry leak register cleared (11 items)** — posture stays as-is (two isolated lanes, compile-time transmission constants, fail-closed consent incl. DO_NOT_TRACK, `.strict()` zod schemas, triple-redaction diagnostics — all VERIFIED-PASS, `fa-telemetry-consent.md` §3-§4); the launch work is clearing every brand-leak surface: hardcoded endpoint (`feedback.ts:17`), privacy doc URL, brand-prefixed event names (PostHog funnel breakage), common prop on EVERY event, build-constant/CI-secret sync, env kill-switch rename cascades across ≥5 locales, consent reason literals crossing IPC, on-disk artifact names, PostHog project continuity decision, locale search keyword, dialog copy (FA-N6 items 1-11, ordered by risk there).
 2. **Distribution/update surfaces confirmed** — electron-updater backbone needs NO rebuilding (PASS 14/14, `fa-autoupdate-build.md` §A-D); verify channels stable|rc|hourly|daily|adhoc still function under final branding; update-survival E2E green on release candidate.
 3. **Verification debt closure** — authorize spot passes for the two HYG-ONLY inputs (`mc-adapters-linelevel.md`, `fa-wsl-remote-execution.md`) before their findings back committed tasks; resolve `bz-pair-relay-cli.md` (fully UNVERIFIED); settle the three never-landed Round 4 reports via the in-flight R4-1.13/14/22 rewrites (exec-summary §3 risk 7; Q9/Q10).
-4. **Risk-register sign-off** — merged register from `analysis/atlas-risk-register.md` (R5-3.3): zero open red risks at launch; headline set = R1 rename blast radius, R-Rename rebrand breaks, R9 watcher fragility, R2 chokepoint concentration, R4 plugin sandbox honesty, R5/R6 token/fail-open posture (exec-summary §3 items 1-6).
+4. **Risk-register sign-off** — merged register from `analysis/atlas-risk-register.md` (R5-3.3): zero open red risks at launch; headline set = R1 rename blast radius, R-Rename rebrand breaks, R9 watcher fragility, R2 chokepoint concentration, R4 plugin sandbox honesty, R5/R6 token/fail-open posture (see Top Risks section below).
 5. **Staged rollout decision executed** — no staged-rollout mechanism exists anywhere today (`stagingPercentage` zero matches, FA-T10); if wanted, build cohort-based routing on the generic feed BEFORE public launch (exec-summary Q8).
 6. **Acceptance-criteria sweep (FA-N10 cross-cutting)** — final audit confirms: every state-mutating handler carries the named bypass predicate; no action can be created past its approval gate; one enum definition per state machine; operator answers have consumption semantics; rate limiters atomic+persisted (`cross-project-notes-r4.md:296`).
 
-### 3.2 Dependencies
+### Dependencies
 
 - Items C-1/C-2 depend on Phase A rebrand decisions being final (display-surface changes happen once, late).
 - Item C-3 gates Phase B commitments resting on HYG-ONLY/UNVERIFIED reports (notably FA-N5's WSL guardrails — strong but unverified numbers; recommend a dedicated spot pass before hard WSL-touching Phase B work cites line numbers).
 - Item C-6 runs only after Phase B Stages 1-2 land.
 
-### 3.3 Open PM Questions (Phase C)
+### Open PM Questions (Phase C)
 
 1. Verification closure funding — approve the spot passes now? (exec-summary Q9.)
 2. Never-landed discovery — formally drop or accept the rewrites as replacement? (exec-summary Q10.)
@@ -163,7 +160,7 @@ Per `production-architecture.md` §§8, R4-D: MC's JSON-file persistence and pol
 
 ---
 
-## 4. Cross-Phase Dependency Summary
+## Cross-Phase Dependency Summary
 
 ```
 Phase A ──┬── rebrand strategy ──────────────► Phase C (C-1, C-2)
@@ -183,12 +180,21 @@ Sequencing judgment (FA-N10 ordering + R5 additions) is Atlas synthesis; every u
 
 ---
 
-## Scan-Coverage Statement
+## Top Risks
 
-**Read in full this session:** `.Fabrica-atlas-board/Fabrica-atlas-tasks.md` Checkpoint table + autonomous-work section (lines 240-379) + Group 3 row for R5-3.4 (line 206, via grep); `analysis/atlas-executive-summary.md` (148 lines, complete); `analysis/cross-project-notes-r4.md` (316 lines, complete); `analysis/cross-project-notes-r5.md` (446 lines, complete); `analysis/r5-agent-platform-integration-map.md` (269 lines, complete). AGENTS.md system-provided and followed.
+Full merged register lands in `analysis/atlas-risk-register.md` (R5-3.3, in flight). The headline set, from `agent-platform-integration-map.md` §6 + digest:
 
-**Not read this session (relied on cited statuses):** discovery-report bodies (`discovery/round4/*` — all file:line anchors transcribed from the four analysis inputs above, whose own citation accuracy is covered by the named verify passes: waves 4/5/6/7, round4 base, R5-2.3, R5-2.9); `analysis/round4-findings-digest.md`, `production-architecture.md`, `similarities-gaps.md` bodies (quoted via the four inputs); `analysis/atlas-risk-register.md` + `digest-v2-refresh.md` (in flight by other workers — referenced, not consumed); anything under `_sources/` or `../Fabrica-app/` (synthesis layer; no direct source scan performed — consistent with the input documents' own second-hand-anchor discipline, flagged inline where a claim rests solely on HYG-ONLY or UNVERIFIED inputs).
+1. **Contract-rename blast radius (R1)** — `<namespace>:<action>` channel strings live simultaneously in 65 main files, 656 preload sites, ~78 renderer namespaces; every rename is a coordinated three-layer migration (FA-T11; `fa-ipc-watchers.md` §8.4). VERIFIED-PASS.
+2. **Rebrand hard-break surfaces (extends R1)** — renaming the safeStorage key name makes ALL stored ciphertext undecryptable; Chromium partition strings orphan data; ~130 `FABRICA_*` env vars. Recommended mitigation adopted by Atlas: keep on-disk filenames/partition strings unchanged, change display surfaces only (`fa-settings-config-datadirs.md:286-309`; FA-T14). VERIFIED-PASS (W3).
+3. **Watcher-stack fragility under change (R9)** — Fabrica-exclusive, crash isolation/canary/fuses/removal fencing all load-bearing; highest preservation risk of any subsystem (`fa-ipc-watchers.md`:407). VERIFIED-PASS.
+4. **Two chokepoint files concentrate all future work (R2)** — `ipc/pty.ts` (7,745 lines) and `agent-hooks/server.ts` (2,907 lines); both deliberate, both exactly where fleet features will want to modify (`fa-pty-terminal.md` §1; `fa-agent-hooks-probes.md` §10.3). VERIFIED-PASS.
+5. **Plugin sandbox honesty vs autonomous agents (R4)** — post-activate() plugin code holds raw Node power; host API has no exec/spawn/fs method, so `terminal.sendText` could become a de-facto unaudited execution primitive (`fa-plugin-runtime.md` S1 honesty note, S12.5). VERIFIED-PASS.
+6. **Token-in-child-env + fail-open posture (R5/R6)** — `FABRICA_AGENT_HOOK_TOKEN` is pane-readable (loopback-mitigated, not secret from the agent); 30-min lazy TTL decay + fail-open 204s are wrong semantics once spend/actions hang off status (`fa-agent-hooks-probes.md` §10.4; `cross-project-notes-r4.md` FA-N2). VERIFIED-PASS.
+7. **Verification debt on two inputs (process risk)** — `mc-adapters-linelevel.md` (basis of G5/G6, parts of G7, FA-T2/FA-T5) and `fa-wsl-remote-execution.md` are HYG-ONLY; `bz-pair-relay-cli.md` fully UNVERIFIED (`round4-findings-digest.md` §A3 table). Claims resting solely on these carry the caveat inline above. Also: 3 assigned Round 4 reports never landed (auth-onboarding, voice-media, UI-frontend — master-index §D2), though the in-flight R4-1.13/14/22 rewrites address them (`tasks.md` Checkpoint Next Action).
+8. **MC defect porting trap** — MC's guard/task/decision systems each carry 7-9 documented defects (approval holes, batch bypasses, races, dead knobs); porting verbatim would import them. All fix-before-port lists are embedded in FA-N7/N8/N9 (`cross-project-notes-r4.md`). VERIFIED-PASS (W5/W7).
 
-**Written:** this file only, inside `.Fabrica-atlas-board/analysis/`. No file outside `.Fabrica-atlas-board/` created or modified (Checkpoint/task-table update in `Fabrica-atlas-tasks.md` excepted per board convention).
+---
 
-_Report end — ATLAS R5-3.4._
+## Additional PM Questions (not covered above)
+
+1. **Multi-host scope** — is cluster/multi-host deployment in scope for the first release cycle? Determines whether C4 (buzz transport) and FA-T17 (k8s provider blueprint) enter Phase D or get dropped. (FA-T17, `bz-ops-deploy-admin.md`)

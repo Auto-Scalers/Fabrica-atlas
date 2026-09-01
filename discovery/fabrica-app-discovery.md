@@ -177,7 +177,38 @@ orchestration (multi-agent coordination: threaded messages, ask/reply, task disp
 
 ---
 
-## 13. Cross-Cutting Patterns
+## 13. Deep-Dive Reports (subfolder)
+
+Detailed line-level analysis of specific subsystems. Each report covers file:line citations for all claims.
+
+| Report | Coverage |
+|---|---|
+| `discovery/fabrica-app/fa-settings-config-datadirs.md` | Settings/config/preferences storage; on-disk layout per OS; data-dir migration; env identity |
+| `discovery/fabrica-app/fa-autoupdate-build.md` | Auto-update integration; signing/notarization; release scripts; CI workflows; version bump flow |
+| `discovery/fabrica-app/fa-multi-instance.md` | Multi-instance architecture; dev-vs-prod identity; port/IPC namespace isolation |
+| `discovery/fabrica-app/fa-wsl-remote-execution.md` | WSL execution plane; cross-cutting impact on daemon, SSH, agent-hooks |
+| `discovery/fabrica-app/fa-window-tray-notifications.md` | App lifecycle; single-instance lock; tray; notifications; global shortcuts; deep links |
+| `discovery/fabrica-app/fa-telemetry-consent.md` | Consent surface; cohort classifiers; burst caps; compile-time gating |
+| `discovery/fabrica-app/fa-search-indexing.md` | Ripgrep indexing; reindex triggers; watcher coupling; memory bounds |
+| `discovery/fabrica-app/fa-runtime-structured-read.md` | Structural map of the 37K-line core file (fabrica-runtime.ts) |
+| `discovery/fabrica-app/fa-auth-onboarding.md` | Auth flows; profile management; onboarding wizard |
+| `discovery/fabrica-app/ai-vault-browser.md` | AI Vault scanner + 17 per-agent parsers; browser manager + CDP proxy + Design Mode |
+| `discovery/fabrica-app/fa-command-palette-search.md` | Cmd+J palette internals; fuzzy matching; host badges; live status |
+| `discovery/fabrica-app/fa-git-integration.md` | Git runner; status caching; worktree invariants; gh circuit breaker |
+| `discovery/fabrica-app/fa-pty-terminal.md` | Terminal pane; xterm integration; agent completion coordination; detached restart |
+| `discovery/fabrica-app/fa-mobile-companion.md` | Expo/RN companion; E2EE transport; WebSocket RPC; QR pairing |
+| `discovery/fabrica-app/fa-ipc-watchers.md` | IPC handler registration; filesystem watchers; crash quarantine |
+| `discovery/fabrica-app/fa-hook-parity.md` | Agent status hooks; loopback server; sidebar status |
+| `discovery/fabrica-app/fa-agent-hooks-probes.md` | Hook installer machinery; WSL hook relay; probe internals |
+| `discovery/fabrica-app/fa-ssh-plane-residuals.md` | SSH config parsing; connection manager; channel multiplexer |
+| `discovery/fabrica-app/fa-plugin-runtime.md` | Plugin manifest; worker lifecycle; panel bridge; marketplace; kill list |
+| `discovery/fabrica-app/fabrica-app-main-subsystems.md` | Codex integration; git engine; SSH plane; daemon internals |
+| `discovery/fabrica-app/fabrica-app-plugins.md` | Full plugin platform deep-dive |
+| `discovery/fabrica-app/fabrica-app-renderer.md` | Terminal pane; pane-manager; sidebar; settings; Zustand slices |
+
+---
+
+## 14. Cross-Cutting Patterns
 
 1. **Dual IPC surfaces**: Electron ipcMain.handle channels (`namespace:action`) for the renderer + versioned RPC layer (Unix socket/WebSocket/relay transports) for CLI/web/mobile — same domain decomposition, different transports; runtime-rpc.ts is the declared security boundary for the CLI.
 2. **Provider abstraction**: PTY/filesystem/git contracts with Local/SSH/Daemon implementations — execution host is invisible above the layer.
@@ -192,7 +223,7 @@ orchestration (multi-agent coordination: threaded messages, ask/reply, task disp
 
 ---
 
-## 14. Concepts Worth Carrying Into Fabrica's Transformation
+## 15. Concepts Worth Carrying Into Fabrica's Transformation
 
 Directly relevant to "desktop CLI agent management and operations platform":
 1. **Worktrees-as-workspaces** — parallel isolated agent execution with compare-and-merge UX.

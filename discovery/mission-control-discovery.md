@@ -50,101 +50,15 @@ CI (`.github/workflows/ci.yml`): on push/PR to main — pnpm install frozen, typ
 
 ---
 
-## 3. Repository Structure (complete)
+## 3. Repository Structure
 
-```
-_sources/mission-control/
-├── README.md                  # Full product doc (features, API, architecture)
-├── CLAUDE.md                  # Agent operations manual (schemas, protocols, workflows)
-├── CONTRIBUTING.md            # Contribution guidelines
-├── LICENSE                    # AGPL-3.0
-├── .gitignore
-├── .claude/commands/<cmd>/user.md     # 14 auto-generated slash-command files
-│       (brainstorm, business-analyst, daily-plan, marketer, orchestrate,
-│        pick-up-work, plan-feature, report, research, researcher,
-│        ship-feature, standup, tester, weekly-review)
-├── .claude-plugin/plugin.json         # Cowork plugin manifest ("workspace" v0.2.0)
-├── .github/                           # PR template, issue templates, ci.yml
-├── commands/<cmd>/SKILL.md            # 10 plugin command skills (disable-model-invocation)
-├── skills/<skill>/SKILL.md            # 3 knowledge skills (agentic-company,
-│       eisenhower-triage, task-management)
-├── scripts/                           # Workspace-level scripts
-│   ├── run-team.sh                    # tmux: spawn all active agents in parallel panes
-│   ├── run-task-team.sh               # tmux: one pane per team member for a task
-│   ├── check-domains.mjs              # DNS/HTTP availability checker (~22 domains)
-│   ├── start-mc-test2.js              # dev-server wrapper (machine-specific)
-│   └── sync-public.sh                 # publish private→public repo via whitelist overlay
-└── mission-control/                   # THE Next.js app
-    ├── package.json / tsconfig.json / tailwind.config.ts / postcss.config.mjs /
-    │   vitest.config.ts / pnpm-workspace.yaml / next.config.ts / eslint.config.mjs /
-    │   next-env.d.ts / .env.example / ecosystem.config.js (PM2: next start, port 3000,
-    │   autorestart, max_memory_restart 512M)
-    ├── start-mission-control.bat|.sh / stop-mission-control.bat|.sh
-    ├── data/                          # JSON source of truth (see §5)
-    ├── __tests__/                     # 6 files: daemon / data / security / validations /
-    │                                  #   helpers / integration/agent-flow (193 tests, 5 suites)
-    ├── docs/                          # media only: demo.gif, rocket.svg, 6 screenshots
-    ├── scripts/
-    │   ├── generate-context.ts        # builds data/ai-context.md (~650-token snapshot)
-    │   ├── seed-demo.ts + seed-brewster/dads-day-out/infant-feeding/vte-project  # demo generators
-    │   ├── create-launch-project.js   # launch-project scaffolder
-    │   ├── fix-stuck-tasks.js / find-auth-env.js / test-restricted-auth.js / verify-ifa.js
-    │   └── daemon/                    # Autonomous agent daemon (14 files, §8)
-    └── src/
-        ├── middleware.ts              # API auth + CSRF (§7.1)
-        ├── app/                       # Pages (§6.1) + API routes (§7.2)
-        ├── components/                # ~45 app components + 20 ui primitives (§6.2)
-        ├── hooks/                     # 11 client hooks (§6.3)
-        ├── providers/active-runs-provider.tsx
-        └── lib/                       # Core logic modules (§7.3, §9)
-```
-
-File counts by area: src/app pages ≈ 30 route files; API routes = 59 route.ts files; components = 45 app + 20 ui; hooks = 11; lib = 18 (+8 adapters); daemon = 14 files (~4,100 lines).
+Next.js 15 App Router app under `mission-control/`. ~180 real source files: src/app (30 pages + 59 API routes), src/components (45 app + 20 ui), src/hooks (11), src/lib (18 + 8 adapters), scripts/daemon (14 files ~4,100 lines). Data = JSON files under `data/`. Full structure mapped in `discovery/mission-control/mc-ui-frontend.md` §2.
 
 ---
 
 ## 4. Data Model (all state = JSON files in `data/`)
 
-### Core workspace files
-| File | Shape | Purpose |
-|---|---|---|
-| `tasks.json` | `{tasks: Task[]}` | Tasks: importance×urgency (Eisenhower), kanban status, projectId, milestoneId, assignedTo (lead agent), collaborators[], dailyActions[], subtasks[], blockedBy[] (dependency chain), estimatedMinutes/actualMinutes, acceptanceCriteria[], tags[], notes, comments[], dueDate, fieldTaskIds?, deletedAt (soft delete), timestamps |
-| `tasks-archive.json` | `{tasks: Task[]}` | Archive of completed tasks |
-| `goals.json` | `{goals: Goal[]}` | long-term/medium-term goals; milestones point at parentGoalId; linked project + task IDs |
-| `projects.json` | `{projects: Project[]}` | Ventures: status lifecycle (active/paused/completed/archived), color, teamMembers[] (agent IDs), tags |
-| `agents.json` | `{agents: AgentDefinition[]}` | id slug, name, lucide icon, description, instructions (= system prompt), capabilities[], skillIds[], status active/inactive |
-| `skills-library.json` | `{skills: SkillDefinition[]}` | Reusable markdown knowledge injected into agent prompts; bidirectional agent↔skill links |
-| `brain-dump.json` | `{entries: BrainDumpEntry[]}` | Raw idea capture; processed flag; convertedTo taskId |
-| `inbox.json` | `{messages: InboxMessage[]}` | from/to/type(delegation|report|question|update|approval)/taskId/subject/body/status(unread|read|archived) |
-| `decisions.json` | `{decisions: DecisionItem[]}` | requestedBy/question/options[]/context/status(pending|answered)/answer |
-| `activity-log.json` | `{events: ActivityEvent[]}` | 15 event types (task_created…agent_checkin + field_task_* bridges) |
-| `ai-context.md` | generated | ~650-token workspace snapshot for agent situational awareness (`pnpm gen:context`) |
-
-### Runtime/orchestration files
-| File | Purpose |
-|---|---|
-| `active-runs.json` | Live task executions: id, taskId, agentId, projectId/missionId, pid, status(running/completed/failed/timeout/stopped), costUsd, numTurns, continuationIndex |
-| `missions.json` | Continuous project runs: counters, per-task history w/ attempts, LoopDetectionState {taskAttempts, taskErrors}, status running/completed/stopped/stalled |
-| `respond-runs.json` | Inbox auto-respond chains: messageId, threadSubject, pid, continuationIndex, stopped flag, cost/tokens totals |
-| `daemon-config.json` | polling{enabled,intervalMinutes}, concurrency{maxParallelAgents}, schedule{name→{enabled,cron,command}}, execution{maxTurns,timeoutMinutes,retries,retryDelayMinutes,skipPermissions,allowedTools[],agentTeams,claudeBinaryPath,maxTaskContinuations}, inbox{maxContinuations,maxTurnsPerSession,timeoutPerSessionMinutes}, fieldOps{autoExecute,pollIntervalMinutes,maxConcurrentExecutions,requireVaultSession} |
-| `daemon-status.json` | Uptime, activeSessions[], history[] (cap 50), stats (dispatched/completed/failed, totalCostUsd, 4 token counters), lastPollAt, nextScheduledRuns |
-| `daemon-retry-queue.json` | Persistent retry entries {taskId, agentId, retryAt, attempt, failedAt, error} |
-| `data/checkpoints/*.json` | Full workspace snapshots (8 core collections) with metadata + stats |
-
-### Field Ops files (`data/field-ops/`)
-| File | Purpose |
-|---|---|
-| `tasks.json` | FieldTask: type(social-post/email-campaign/ad-campaign/payment/publish/design/crypto-transfer/custom), serviceId, assignedTo, status state machine (draft→pending-approval→approved→executing→awaiting-signature→completed/failed/rejected), payload (≤10KB), result, attachments, linkedTaskId, blockedBy, approvalRequired, approvedBy/rejectedBy/rejectionFeedback, scheduledFor |
-| `missions.json` | FieldMission: autonomyLevel(approve-all/approve-high-risk/full-autonomy), linkedProjectId, task IDs |
-| `services.json` | Connected services: mcpPackage, status(saved/connected/disconnected/error), authType(oauth2/api-key/none), credentialId→vault, riskLevel(high/medium/low), capabilities, allowedAgents, config, catalogId, lastUsed |
-| `service-catalog.json` | 64 pre-configured services across 16 categories with setup guides + configFields (type=password marks secrets) |
-| `.credentials.json` | Vault: masterKeyHash ("scrypt:<salt>:<hash>" or legacy SHA-256), masterKeySalt, credentials[{encryptedData hex, iv, authTag, expiresAt}] |
-| `safety-limits.json` | Global budget (daily $100/weekly $500/monthly $2000 defaults, pauseOnBreach), per-service limits (maxPerTxUsd, dailyLimitUsd, approvedRecipients), spendLog (pruned >31 days) |
-| `approval-config.json` | Global autonomy mode + per-mission overrides |
-| `templates.json` | Reusable field-task templates with {{variable}} payload slots, usageCount |
-| `activity-log.json` | 22 typed field events; rotation cap 500 events w/ date-stamped archive files |
-
-ID conventions: `task_`, `goal_`, `mile_`, `proj_`, `bd_`, `msg_`, `dec_`, `evt_`, `snap_`, `ftask_`, `fmission_`, `fevt_`, `ftpl_`, `rr_`, `session_`, `run_` + `run_<ts>_c<N>` continuations — all timestamp-based.
+Core workspace: tasks.json (Eisenhower + kanban), goals.json, projects.json, agents.json, skills-library.json, brain-dump.json, inbox.json, decisions.json, activity-log.json. Runtime: active-runs.json, missions.json, daemon-config.json, daemon-status.json. Field Ops: field-ops/tasks.json (8 types, approval state machine), field-ops/services.json (64-service catalog), field-ops/.credentials.json (AES-256-GCM vault), field-ops/safety-limits.json. ID conventions: task_, goal_, proj_, etc. + timestamp-based. Full field-level detail in `discovery/mission-control/mc-fieldtask-kanban.md`.
 
 ---
 
@@ -167,175 +81,39 @@ ID conventions: `task_`, `goal_`, `mile_`, `proj_`, `bd_`, `msg_`, `dec_`, `evt_
 
 ## 6. Frontend (src/app, src/components, src/hooks)
 
-### 6.1 Pages (App Router)
-| Route | Purpose / key features |
-|---|---|
-| `/` (layout.tsx) | ThemeProvider (dark default), LayoutShell (sidebar + command bar + ActiveRunsProvider), Sonner toaster |
-| `/` dashboard | Onboarding when empty; Autopilot status card (Launch/Stop daemon); 4 stat cards; "Attention Required" panel (pending approvals, decisions, unread reports, DO-quadrant, completions); Field Ops summary; FinancialOverviewCard; Inbox/Decisions widgets; Recent Activity; Crew Status workload list w/ per-agent pills (idle/on-track/dependencies/awaiting-decision/overloaded); venture grid; objectives grid; EisenhowerSummary; brain-dump preview; create dialogs. Data: batched /api/dashboard (15s) |
-| `/activity` | Activity timeline; event-type filter; grouped by date; 30s poll |
-| `/autopilot` | Daemon control panel: Running/Stopped badge + PID; master-password-gated launch; 5 stat cards (uptime, completed/dispatched + success rate, active vs max parallel, failures + last poll, spend $ + tokens); active sessions; editable cron schedule table (add/edit/remove, ON/OFF, presets, next-run); editable config (parallelism, turns, timeout, retries, interval) + read-only warnings (skipPermissions, allowedTools); recent history (last 20 w/ cost). 5s poll |
-| `/brain-dump` | Capture textarea (Enter saves); Auto-Process All + per-entry Zap → /api/brain-dump/automate; convert-to-task dialog (prefilled CreateTaskDialog); archive/delete; processing pulse highlight; 5s refetch while processing |
-| `/checkpoints` | Save/load/delete/export/import workspace snapshots; per-checkpoint stats |
-| `/crew` | Agent registry cards; filter tabs; capability badges; active-task + skill counts |
-| `/crew/new` | Custom agent creator: name→auto slug, icon picker (14 Lucide), instructions textarea (system prompt), capabilities tag input, active switch, live preview |
-| `/decisions` | Pending queue (option buttons + custom answer) + answered history; 10s poll |
-| `/field-ops` | Hub: autonomy selector (master-password gated; red warning for full autonomy); getting-started; stats row; FinancialOverviewCard(detailed); active missions w/ progress; recent field activity feed |
-| `/field-ops/activity` | Audit log: category filters, expandable rows w/ metadata grid, pagination (20/page) |
-| `/field-ops/approvals` | Approval queue: risk classification (high=payment/crypto/ad-campaign; medium=email/social/publish; else low), risk tabs, multi-select batch approve/reject (≤50), reject requires ≥10-char feedback |
-| `/field-ops/missions` | Mission list: status tabs w/ counts, progress bars, pending-approval badges; create dialog; 15s poll |
-| `/field-ops/missions/[id]` | Mission detail: badges + dropdown (edit/pause-resume/complete/delete); security summary bar; progress w/ per-status counts; circuit-breaker warning card; pending approvals; task list (approve/reject/execute/dry-run/resubmit); collapsible mission activity; vault-unlock-gated actions w/ auto-retry after unlock; failed tasks auto-reset to approved |
-| `/field-ops/safety` | Global budgets form; per-service limits (per-tx, daily, approved recipients); spend bars colored by % of limit; spend log table |
-| `/field-ops/services` | Two tabs: My Services (status/risk badges, add/edit custom service, test connection w/ latency, activate/update credentials, disconnect/delete) + Library (search, 16-category chips, catalog cards, save-from-catalog, setup guide dialog) |
-| `/field-ops/vault` | Health badge (Empty/Healthy/Migration Needed); security banner; session card w/ 30-min countdown; add-credential form; credential table (revoke); setup wizard; reset requiring typing "RESET" |
-| `/guide` | Static docs page: architecture, task management, projects/goals, brain dump, agents, field ops, vault security (scrypt params, rate limits), data management, keyboard shortcuts |
-| `/inbox` | Thread grouping by normalized subject (strips "Re:"); unread counts; reply; archive/archive-all; "Ask to respond" (server-side agent auto-reply, 3s status poll w/ stop button); compose dialog; filters; 10s poll |
-| `/objectives` | Goal hierarchy: objective cards w/ computed progress from linked tasks; nested milestone cards w/ checkable task lists; create/edit/delete |
-| `/priority-matrix` | Eisenhower board: dnd between DO/SCHEDULE/DELEGATE/ELIMINATE updates importance/urgency; project+assignee filters; bulk action bar; fast poll while running |
-| `/projects` + `/ventures` | Identical pages: venture card grid (progress, quadrant mini-counts, Run/Stop buttons), archived toggle, CRUD dialogs |
-| `/projects/[id]` + `/ventures/[id]` | Identical detail pages: header w/ RunButton (run whole project / stop), live ProjectRunProgress panel, team management inline, tabs: Priority Matrix / Status Board (Kanban) / Milestones; custom dnd-kit context w/ 8px drag activation constraint |
-| `/skills` | Skills library cards + "AI Commands" reference table w/ copy buttons |
-| `/skills/new`, `/skills/[id]` | Skill editor: name/description/markdown content, tags, agent assignment toggles, dirty-state warning |
-| `/status-board` | Kanban (Not Started/In Progress/Done): dnd updates kanban; project filter; bulk bar |
-| `/team/[role]` | Agent profile: inline-editable description + instructions; capabilities & skills editors; task sections (in-progress/todo/completed) w/ run buttons; recent messages/activity |
-| error boundaries | error.tsx, global-error.tsx, not-found.tsx, loading.tsx skeletons throughout |
+### Pages (App Router)
+30 routes covering dashboard, priority-matrix (Eisenhower), status-board (Kanban), projects/ventures, goals/objectives, crew (agent registry), tasks, inbox (threaded), decisions, brain-dump, autopilot (daemon control), field-ops (hub, approvals, missions, services, vault, safety, activity), skills, checkpoints, guide, settings, activity. Full route-by-route detail in `discovery/mission-control/mc-ui-frontend.md` §3.
 
-### 6.2 Components (app-level, 45)
-- Navigation/shell: app-sidebar (route + dynamic agent links, badge counters for inbox/decisions/field approvals, theme toggle, collapsible tooltips), sidebar-nav (legacy simpler nav), sidebar-footer (server status via /api/server-status: pm2 vs terminal, uptime, PID; emergency-stop kill dialog; theme toggle), layout-shell, breadcrumb-nav, command-bar (slash-command autocomplete via `/`, task search, quick brain-dump capture), search-dialog (Cmd+K palette over tasks/goals/projects/brain-dump), keyboard-shortcuts (`?` help, `N` new task, `G`+letter navigation chords), onboarding-dialog (multi-step wizard incl. vault setup step; localStorage `mc-onboarded`).
-- Board infra: board-view.tsx exports ColumnConfig, DraggableTaskCard, BoardColumn, BoardDndWrapper, BoardPanels, useTaskHandlers, useSelection (shared by Kanban + Eisenhower pages).
-- Task UI: task-card (kanban dot, assignee + collaborator avatars max 3 + overflow, dependency/subtask/due/estimate indicators, pending-decision warning, RunButton), task-detail-panel (slide-in editor: form + comments/messages + activity + delegation send + related field tasks), task-form (canonical form enforcing LIMITS), bulk-action-bar (mark done/delete/clear), run-button (rocket ↔ red stop morph).
-- CRUD dialogs: create/edit task/project/goal, decision-dialog (also used globally by ActiveRunsProvider to unblock runs), confirm-dialog.
-- Dashboard widgets: eisenhower-summary, goal-card, project-card-large, mission-progress (ProjectRunProgress live panel), skeletons (11 shimmer variants), empty-state, error-state.
-- System: theme-provider/theme-toggle, vault-setup-wizard (password strength meter + crypto explainer).
+### Components (45 app + 20 ui)
+Navigation/shell (sidebar, command bar, search dialog, keyboard shortcuts, onboarding), board infra (shared ColumnConfig/DraggableTaskCard/BoardColumn), task UI (card, detail panel, form, bulk action bar, run button), CRUD dialogs, dashboard widgets, field-ops components (14: service management, vault, wallet, financial overview, execution results), system (theme, vault-setup-wizard). Full component inventory in `discovery/mission-control/mc-ui-frontend.md` §4.
 
-Field-ops components (14): activate-service-dialog (updateMode for credential rotation), catalog-service-card, execution-result-panel (renders tweetId/txHash/url/latency w/ copy buttons), field-task-card (computed risk badge, dropdown actions, wallet indicator), field-task-form-dialog (per-type payload fields, approval warning), financial-overview-card (summary/detailed variants, vaultLocked handling), getting-started-card (dismissible, localStorage), mission-form-dialog, reject-task-dialog (≥10 chars), setup-guide-dialog, sign-transaction-button (MetaMask connect → prepare → eth_sendTransaction → submit-signature), vault-unlock-dialog (context-aware, returns password to caller), wallet-balance-card, wallet-connect-button (EIP-1193, chain names, truncated address).
-
-UI primitives (20 shadcn-style): badge, button, card, checkbox, collapsible, command, dialog, dropdown-menu, input, label, popover, scroll-area, select, separator, skeleton, switch, tabs, textarea, tip, tooltip.
-
-### 6.3 Hooks (11) & Provider
-| Hook | Purpose | Polling |
-|---|---|---|
-| use-data.ts (factory `useDataResource` + 9 hooks) | Generic CRUD against /api/*: optimistic update/delete w/ revert + undo toast; bulk ops via /api/tasks/bulk; useProjects maps to ventures endpoint | tasks 15s, activity 30s, inbox 10s, decisions 10s; refetch on tab visible |
-| use-active-runs.ts | Run tracking + runTask/runProject/stop*; toasts on completion/failure; intercepts pendingDecision → opens DecisionDialog → auto-relaunches task after answer | 3s |
-| use-dashboard-data.ts | Single batched /api/dashboard fetch | 15s + visibility |
-| use-dashboard.ts | Older non-polling variant | none |
-| use-daemon.ts | Status/config; start(masterPassword?)/stop/updateConfig | 5s |
-| use-fast-task-poll.ts | Accelerates refresh during executions | 5s while running |
-| use-field-ops.ts | Factory CRUD (missions/tasks/services) + useVaultSession (unlock/lock, caches password in-memory 30 min, 60s session check) + useExecuteTask (dry-run support) + module-level getCachedVaultPassword | missions 15s, field tasks 10s |
-| use-processing-entries.ts | Tracks brain-dump auto-processing transitions; 10-min stuck timeout | drives 5s refetch |
-| use-sidebar.ts | Badge counts from batched /api/sidebar | 10s |
-| use-connection.ts | navigator.onLine + HEAD health ping | 30s |
-| use-wallet.ts | MetaMask EIP-1193: connect/disconnect, account/chain change listeners, switchChain, sendTransaction | event-driven |
-| providers/active-runs-provider.tsx | Context wrapper around useActiveRuns + global DecisionDialog for decision-interrupted launches | — |
+### Hooks (11) & Provider
+use-data (generic CRUD factory + 9 hooks, optimistic updates), use-active-runs (run tracking, decision dialog interception), use-dashboard-data, use-daemon, use-fast-task-poll, use-field-ops (missions/tasks/services CRUD + vault session), use-processing-entries, use-sidebar, use-connection, use-wallet (MetaMask EIP-1193). Full detail in `discovery/mission-control/mc-ui-frontend.md` §5. Also `discovery/mission-control/mc-frontend-buzz-clients.md` for field-ops page internals.
 
 ---
 
 ## 7. Backend
 
-### 7.1 Middleware (`src/middleware.ts`)
-- CSRF: POST/PUT/DELETE/PATCH require Origin host == Host header (no-origin allowed for CLI/server-to-server).
-- Auth: if `MC_API_TOKEN` env set → all /api/* require `Authorization: Bearer <token>` compared with constant-time XOR comparison; unset = open local access. Client counterpart `NEXT_PUBLIC_MC_API_TOKEN` (both from .env.example; future placeholders GITHUB_TOKEN/DATABASE_URL).
+### Middleware
+CSRF (POST/PUT/DELETE/PATCH require Origin == Host) + bearer-token auth (MC_API_TOKEN, constant-time XOR comparison; unset = open local).
 
-### 7.2 API Routes (59 route.ts files, grouped)
+### API Routes (59 route.ts files)
+Core workspace CRUD (tasks, goals, projects, agents, skills, brain-dump, inbox, decisions, activity-log) with filters, sparse fields, pagination, batched endpoints (/api/dashboard, /api/sidebar). Task run/stop with detached process spawning. Mission launcher with dependency-aware auto-dispatch, concurrency slots, loop detection. Field Ops: approval state machine enforcement, circuit breaker, execution engine with adapter resolution, wallet-signing two-step flow, spend-limit enforcement, vault crypto. Daemon: start/stop with PID liveness checks, config updates. Full route-by-route detail in `discovery/mission-control/mc-execute-guards.md` §2 (API guards) and `discovery/mission-control/mc-workflow-engine.md` §2 (daemon interaction).
 
-**Core workspace CRUD**
-- `/api/tasks`: GET (filters id/assignedTo/kanban/projectId/quadrant/includeDeleted/include=archived, sparse `fields=`, pagination+meta); POST (create + auto-delegation inbox messages to assignee AND collaborators + task_delegated event); PUT (update; re-delegation on assignee change; collaborator notifications; completion → report message to "me" + handleUnblocking notifies agents whose blockedBy deps are now done); DELETE (soft delete via deletedAt, or ?hard=true removes + cleans blockedBy refs and goal task refs).
-- `/api/tasks/bulk`: PUT atomic multi-update in one mutex transaction; DELETE bulk soft-delete.
-- `/api/tasks/archive`: GET archived; POST moves ALL completed tasks to archive atomically.
-- `/api/tasks/[id]/run`: POST validations (exists, AI-assigned ≠ me, not done, not already running, deps unblocked, no pending decision — returns the decision object); spawns detached run-task.ts (--source manual, optional --agent-teams).
-- `/api/tasks/[id]/stop`: kills PID (tree-kill → fallback process.kill), marks run stopped, resets task to not-started.
-- `/api/goals`, `/api/projects`, `/api/ventures` (duplicate of projects): standard CRUD + soft delete; hard delete cleans references.
-- `/api/projects/[id]/run` + `/api/ventures/[id]/run`: continuous mission launcher — 409 if already running; eligible = project tasks not-done + AI-assigned; pre-validates dispatchable (deps, decisions); skips live-running (PID checks); concurrency slots (overflow → queued); creates missions.json entry w/ loopDetection state; spawns run-task.ts children (--source project-run --mission <id>). Returns {missionId, launched, skipped, queued, total, dispatchable}.
-- `/api/projects/[id]/stop` + ventures twin: kills all PIDs, stops mission, reverts in-progress tasks to not-started.
-- `/api/missions`: GET w/ reconciliation on every poll — detects running missions with no live processes past a 30s grace period; completes them (posts report), re-dispatches eligible tasks (blockers, decisions, ≤3 attempts, concurrency), waits if dependencies could resolve internally, else marks stalled + posts stalled report.
-- `/api/runs`: GET active-runs w/ PID liveness; dead "running" marked failed.
-- `/api/goals|projects|brain-dump|inbox|decisions|activity-log|agents|skills`: full CRUD w/ Zod schemas, filters, pagination.
-- `/api/agents`: owner-guarded mutations; duplicate-ID 409; regenerates .claude/commands/<id>/user.md on save; built-in roles always soft-delete; hard-delete cleans assignedTo/collaborators/skill.agentIds refs.
-- `/api/skills`: writes skills/<id>/SKILL.md + resyncs linked agents' command files on every mutation.
-- `/api/dashboard`: parallel read of 7 files; computes stats, attention items, eisenhowerCounts, curated lists.
-- `/api/sidebar`: batched badge counts (incl. pendingFieldApprovals).
-- `/api/server-status`: PM2 detection via process.env.pm_id; {mode, uptimeSeconds, pid}.
-- `/api/sync`: regenerate all agent command + skill files.
-- `/api/seed-demo`: overwrite core data with demo content (3 projects, 4 goals, 7 tasks, 4 entries, 4 messages, 7 events, 1 decision, 3 disconnected services, 1 demo field mission w/ 6 social-post tasks).
-- `/api/checkpoints` (+export/import/load/new): snapshot save/list/delete (ID regex `/^snap_(\d+|demo)$/` path-traversal guard), download attachment, import validation (8 required data keys), load replaces all core data + background gen:context, new wipes workspace but restores 5 built-in agents.
-- `/api/brain-dump/automate`: spawns run-brain-dump-triage.ts for selected/all unprocessed entries.
-- `/api/inbox/respond`: validates recipient is an existing AI agent; spawns run-inbox-respond.ts detached; `/status` returns running respond-runs (client polls 3s); `/stop` sets cooperative stopped flag + kills current PID.
-- `/api/daemon`: GET status w/ PID-liveness self-correction; POST start (409 if running; detached spawn w/ Windows .cmd workaround) / stop (SIGTERM via PID file); PUT config update (owner-guarded; enabling skipPermissions via API rejected 403 — manual edit only).
-- `/api/emergency-stop`: 4 tolerant steps — stop daemon, pause all active field missions, clear vault session, log both activity logs.
-
-**Field Ops**
-- `/api/field-ops/tasks`: server-side approval enforcement — computes approvalRequired via requiresApproval(type, serviceRisk, mode), never trusts client; state machine enforced (invalid transitions logged as security events); approval-bypass detection (draft→approved) 403; circuit-breaker pre-execution check (3+ consecutive failures → pause mission, 409); typed transition events w/ duration; cross-links into linked regular task's fieldTaskIds.
-- `/api/field-ops/batch`: bulk submit/approve/reject ≤50, owner-guarded, single atomic mutate pass, notifications per task.
-- `/api/field-ops/missions`: owner-guard on activate/autonomy changes; cascade orphaning of member tasks on delete.
-- `/api/field-ops/services`: install (secret-detection scan of plaintext config w/ warnings), update (owner-guard on riskLevel/allowedAgents changes), delete; `/save-from-catalog` creates saved-but-disconnected service; `/activate` splits config fields safe-vs-sensitive using catalog configFields, requires master password for sensitive fields, initializes/verifies vault, AES-encrypts and stores credential, strips sensitive keys from plaintext config; `/test` resolves adapter, decrypts credential (session password or body), runs healthCheck, logs pass/fail.
-- `/api/field-ops/execute` (core engine, 641 lines): full lifecycle — task must be exactly `approved`; service connected; per-service rate limit (10/5min → 429 + Retry-After); spend-limit enforcement w/ USD estimation heuristics (ETH×$2000, USDC 1:1, face value payments; breach → 403 + optional pauseOnBreach pauses all missions); adapter resolution (fallback = "manual execution" mode); wallet-signing redirect to /prepare; payload validation; dry-run exits before side effects; staleness re-validation if service unused ≥3 days; credential decryption (always verifies password even with active session); transition to executing; adapter.execute; result recording; spendLog entry; sanitized result logging (recursive sensitive-key redaction); circuit breaker; notification bridge to inbox/activity; dependency unblocking (field tasks AND regular tasks, notifying assigned agents).
-- `/api/field-ops/execute/prepare` + `/submit-signature`: two-step MetaMask wallet-signing flow — prepareTransaction builds unsigned tx params (task → awaiting-signature); submit-signature validates txHash regex `^0x[0-9a-fA-F]{64}$`, records result w/ signingMode:"wallet", logs estimated spend.
-- `/api/field-ops/financials`: aggregates getFinancials() across configured financial adapters (parallel, Promise.allSettled); lists available-but-unconfigured integrations; vaultLocked → placeholder snapshots.
-- `/api/field-ops/wallet`: ETH/USDC balances per ethereum-wallet service (vault-locked aware).
-- `/api/field-ops/safety-limits`: GET w/ computed spend summary; PUT owner-guarded, prunes spend log >31 days.
-- `/api/field-ops/vault`: GET metadata only (never secrets) + health mode (legacy/encrypted counts, masterKeyFormat); POST store w/ automatic legacy migration (SHA-256 hash → scrypt; base64 credentials → AES-256-GCM, logged vault_migrated); DELETE revoke.
-- `/api/field-ops/vault/setup|session|reset|decrypt`: init (min 8 chars, confirm match, starts session); unlock (rate-limited brute-force protection) / lock / status ({active, remainingMs, ttlMs}); reset requires literal `{confirm:"RESET_VAULT"}`; decrypt (rate-limited, expiration check 410, legacy opportunistic migration, auth-tag failure → 403 tampering, access logged).
-
-### 7.3 Lib Modules (src/lib)
-| Module | Contents |
-|---|---|
-| types.ts (~675 lines) | All domain types/enums (Importance, Urgency, KanbanStatus, AgentRole, EventType(15), MessageType, RunStatus, ProjectRunStatus(+stalled), AutonomyLevel, FieldTaskStatus(8), FieldTaskType(8), ServiceRiskLevel, FieldOpsEventType(22)); AGENT_ROLES legacy array; SKILLS (10 slash-command descriptors); full entity interfaces; Eisenhower helpers getQuadrant/quadrantFromValues/valuesFromQuadrant; field-ops types incl. SafetyLimits, CatalogService, ServiceCategory(16) |
-| validations.ts (~571 lines) | ~35 Zod schemas (create/update pairs for every entity + daemonConfigUpdateSchema strict w/ range clamps + execute/vault/batch/template schemas); LIMITS constants (TITLE 200, DESCRIPTION 5000, SUBJECT 500, TAG 100, MAX_SUBTASKS 100, MAX_BLOCKED_BY 50, MAX_OPTIONS 20…); validateBody helper returning field-level errors |
-| data.ts (857 lines) | The entire persistence layer — see §5 pattern 2; 20 per-file mutexes; checkpoint CRUD; field-ops readers/mutators; field activity log rotation (cap 500 → date-stamped archives); DEFAULT_SAFETY_LIMITS ($100/$500/$2000) |
-| api-client.ts | apiFetch wrapper: injects Bearer token from NEXT_PUBLIC_MC_API_TOKEN; retries GET/HEAD ×2 (mutations opt-in) on network errors/5xx only, exponential backoff 500ms |
-| middleware.ts | (see §7.1) |
-| field-ops-security.ts (~323 lines) | TASK_TYPE_RISK map; computeTaskRisk (service can elevate, never lower); requiresApproval (HIGH always needs approval — "iron claw"; custom always; then autonomy decides); VALID_TRANSITIONS state machine + isValidTransition/getTransitionError; isApprovalBypassAttempt; shouldTripCircuitBreaker (3 consecutive backward scan, success resets); VaultRateLimiter (soft 3 / hard 10 per 5 min → 15-min lockout); ExecutionRateLimiter (10/service/5 min); PAYLOAD_MAX_SIZE 10240; SECRET_PATTERNS + detectSecretsInConfig. Based on OWASP Top 10 for Agentic Applications 2026 |
-| spend-tracker.ts (~176 lines) | Time boundary helpers (day/week-Monday/month); getServiceSpend/getGlobalSpend; checkSpendLimits ordered checks (global kill switch → service enabled → per-tx → service daily → global daily/weekly/monthly); pruneSpendLog (>31 days); getSpendSummary |
-| vault-session.ts (~99 lines) | Server-only in-memory master-password cache; 30-min TTL singleton w/ setTimeout expiry; getPassword/setPassword/clear/isActive/getRemainingMs/getSessionInfo (never exposes password) |
-| vault-crypto.ts (211 lines) | Server-only crypto: deriveKey (scrypt N=16384 r=8 p=1, 32-byte key); hashMasterPassword ("scrypt:<salt>:<hash>"); verifyMasterPassword (timing-safe, supports legacy SHA-256 migration); encryptCredential/decryptCredential (AES-256-GCM, hex-encoded data/iv/authTag, throws on tag failure); generateEncryptionSalt; migrateLegacyCredential (base64 → AES-GCM) |
-| owner-guard.ts (~64 lines) | requireOwner(body): actor≠"me" → 403; active vault session → authorized; else masterPassword required → verified against scrypt hash |
-| field-ops-notify.ts (~174 lines) | Notification bridge: notifyFieldTaskCompleted/Failed (report messages), Approved/Rejected (update messages) to task.assignee || "me"; logFieldOpsActivity mirrors field events into unified activity log |
-| field-ops-activity.ts (~39 lines) | addFieldActivityEvent — fevt_* ids via mutex |
-| sync-commands.ts (~143 lines) | Regenerates .claude/commands/<agent>/user.md (persona + instructions + capabilities + injected skills + SOP) and skills/<id>/SKILL.md (YAML frontmatter + content); bidirectional skill resolution (agent.skillIds ∪ skill.agentIds), deduped |
-| password-strength.ts (~121 lines) | Client-safe evaluator: top-50 common-password blocklist; length/class scoring; repetition & sequence penalties; score 0–4 + labels + colors + up to 3 suggestions |
-| service-categories.ts (~50 lines) | 16 categories w/ label/icon/color (social-media … ai-automation) |
-| agent-icons.ts, toast.ts, utils.ts | Icon mapping, sonner wrapper, cn() helper |
+### Lib Modules (18)
+types.ts (~675 lines, all domain types/enums), validations.ts (~571 lines, ~35 Zod schemas), data.ts (857 lines, persistence layer with 20 per-file mutexes), api-client.ts (fetch wrapper with retry), field-ops-security.ts (~323 lines, risk classification, state machine, vault rate limiter, execution rate limiter, secret detection), spend-tracker.ts (time boundary helpers, limit checks), vault-session.ts (in-memory master-password cache, 30-min TTL), vault-crypto.ts (scrypt + AES-256-GCM), owner-guard.ts, field-ops-notify.ts (notification bridge), sync-commands.ts (auto-generates Claude Code slash-command files). Full detail in `discovery/mission-control/mc-execute-guards.md` §3.
 
 ---
 
 ## 8. Autonomous Daemon (`scripts/daemon/`, 14 files ~4,100 lines)
 
-Background Node.js process (tsx). Lifecycle: `index.ts start` → config load → HealthMonitor + AgentRunner + Dispatcher + Scheduler wired → PID file → cron jobs → immediate poll → [every N min: retries → dispatch → project-run safety net → field-ops poll] + [every 60s: stale-session sweep, uptime, flush] → SIGTERM drains (stop scheduler → kill all sessions → writeStoppedStatus → remove PID).
-
-| File | Role |
-|---|---|
-| index.ts (228) | CLI start/stop/status; single-instance via PID file + signal-0 probe; graceful shutdown; stale PID cleanup |
-| config.ts (172) | load/save/validate daemon-config.json; deep-merge over defaults w/ strict clamping (interval 1–60, parallel 1–10, turns 1–100, timeout 1–120, retries 0–5, continuations 0–5, inbox turn/timeout bounds); SECURITY warning on skipPermissions; never throws (falls back to defaults). Defaults: poll 5 min, 3 parallel, daily-plan 07:00, standup 09:00 Mon–Fri, weekly-review Fri 17:00, maxTurns 25, timeout 30 min, retries 1, allowedTools [Edit, Write], maxTaskContinuations 2 |
-| types.ts (210) | DaemonConfig, AgentSession, SessionHistoryEntry, DaemonStats (4 token counters), SpawnOptions/Result, ProjectRun + LoopDetectionState, ClaudeUsage/ClaudeOutputMeta (total_cost_usd, num_turns, subtype success/error_max_turns/error_timeout, sessionId, usage), RespondRunEntry, LogLevel |
-| security.ts (159) | scrubCredentials (~14 regexes: sk-/Bearer/base64≥40/AKIA/password=/email:pass/ghp_/npm/xox[bpas]/sk_live/sk-ant/PEM/DB conn strings/token=); validatePathWithinWorkspace (traversal guard); fenceTaskData (<task-context> w/ escape); enforcePromptLimit (100KB); validateBinary (claude|claude.cmd|claude.exe only); buildSafeEnv (PATH/HOME/TEMP + Windows SystemRoot/COMSPEC/PATHEXT + CLAUDE_CODE_OAUTH_TOKEN passthrough + CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS) |
-| logger.ts (104) | Singleton leveled logger (DEBUG/INFO/WARN/ERROR/SECURITY); every line scrubbed; console ANSI + daemon.log plain; 1MB rotation ×3 |
-| health.ts (287) | HealthMonitor class: startSession/endSession (duration, status derivation, cost/token accumulation, history cap 50, atomic tmp+rename flush); isTaskRunning/isCommandRunning dedup guards; getRetryCount from history; cleanStaleSessions (signal-0 sweep every minute); persists across restarts via daemon-status.json |
-| runner.ts (373) | AgentRunner.spawnAgent: binary resolution (config override → platform paths → .cmd shim parsing → rewrite to `node cli.js` → where/which → bare fallback); args-array spawn (no shell); --dangerously-skip-permissions xor --allowedTools; onSpawned(pid) callback; 10MB stdout/stderr caps; timeout → treeKill SIGTERM → SIGKILL fallback; parseClaudeOutput extracts cost/turns/subtype/sessionId/usage (never throws); killSession |
-| run-task.ts (~1090) | Single-task execution engine (CLI, also its own continuation mechanism). Validates eligibility; creates active-runs entry; marks task in-progress; builds prompt; spawns; parses cost; continuation decision (error_max_turns/timeout && index < max → append progress notes to task.notes, spawn self detached `<runId>_c<N>`, exit); exit 0 → handleTaskCompletion (mark done + inbox report + activity event + regen ai-context, each step independently try/caught); failure → handleTaskFailure (task_failed event + Failed: report w/ session count); mission chain: handleProjectRunContinuation — updates mission counters/history, loop detection (≥3 attempts → deduplicated decision w/ options Retry differently/Skip/Stop mission), computes remaining, filters dispatchable (not running/deps done/no decision/attempts<3), slots = maxParallel − running, saves missions BEFORE spawning, stall detection (nothing runnable & nothing running → stalled + skippedTasks + report); postProjectRunReport extracts file paths from summaries via regex |
-| dispatcher.ts (~621) | Dispatcher class — polling brain: persistent retry queue (daemon-retry-queue.json, exponential backoff retryDelay×2^(attempt−1) capped 60 min, survives restarts); pollAndDispatch cycle = processDueRetries → dispatch pending tasks (Eisenhower-sorted, filtered: not running/not queued/unblocked/no decision/retry-count guard) → pollProjectRuns (crash safety net: PID liveness, complete/re-dispatch/revive stalled) → pollFieldOps (opt-in autoExecute: approved field tasks past scheduledFor, optional requireVaultSession check via HTTP, maxConcurrentExecutions, POSTs /api/field-ops/execute as actor "daemon"); runScheduledCommand w/ dedup |
-| prompt-builder.ts (~580) | buildTaskPrompt assembly order: persona (instructions + capabilities + bidirectionally-linked skills) → Field Ops context (only if agent has skill_field_ops: services/missions/approvals/own tasks/linked results/recent executions) → restart context (✅/❌ mission history so agents don't redo work) → retry context (most recent answered decision injected as "take a DIFFERENT approach" mandate) → task data fenced in <task-context> → SOP (read ai-context.md, check inbox, work, write summary; bookkeeping forbidden; subtask-progress-update rules) → 100KB cap. Also buildScheduledPrompt (reads .claude/commands/<cmd>/user.md), getPendingTasks (Eisenhower sort), isTaskUnblocked, hasPendingDecision |
-| scheduler.ts (144) | node-cron wrapper: poll job */N, named schedule jobs w/ cron validation, hot reload (stop→swap→start), next-run approximation for display |
-| respond-runs.ts (135) | respond-runs.json CRUD: isRunStopped (cooperative stop flag), findRunningByMessage (dedup), accumulateRunCost (adds each continuation's cost/turns/tokens), prune finished >1h |
-| run-inbox-respond.ts (~659) | Self-continuing inbox auto-responder: loads message + recipient agent; inbox-scoped limits (min of global/inbox settings); stop-flag check posts "stopped by user" reply; [composing] ack; prompt = persona + conversation thread (subject-normalized OR taskId match, last 20) + target message + exact inbox.json write instructions ("partial update beats no reply"); continuation chains w/ [progress] messages; ensureReplyPosted fallback (scans inbox for agent reply newer than original; friendly first-person summaries for max-turns/timeout/error subtypes; rejects raw JSON blobs); message_sent activity event |
-| run-brain-dump-triage.ts (246) | Batch triage: prompt contains workspace context (projects w/ IDs, goals, agents) + entries; instructs Claude to categorize on Eisenhower, create fully-specified tasks (best-fit agent or "me"), mark entries processed + convertedTo; guardrails (read-before-write, never delete existing); caps min(maxTurns,20)/min(timeout,10); fire-and-forget |
+Background Node.js process. Lifecycle: config → HealthMonitor + AgentRunner + Dispatcher + Scheduler → PID file → cron → poll loop. Core files: index.ts (CLI start/stop/status), config.ts (validation + defaults), runner.ts (binary resolution, args-array spawn, stdout/stderr caps), run-task.ts (~1090 lines, single-task execution engine with self-continuation chains, mission chain logic, loop detection), dispatcher.ts (~621 lines, persistent retry queue, exponential backoff, project-run safety net, field-ops autoExecute), prompt-builder.ts (~580 lines, assembles persona + Field Ops context + task data + SOP), scheduler.ts (node-cron wrapper). Security: credential scrubbing (~14 regex patterns), binary whitelist (claude only), safe env (PATH/HOME/TEMP only), prompt fencing + 100KB cap. Full file-by-file detail in `discovery/mission-control/mc-workflow-engine.md` §3.
 
 ---
 
 ## 9. Service Adapters (`src/lib/adapters/`, 8 files ~2,400 lines)
 
-Common interface (`types.ts`): stateless `ServiceAdapter { serviceId, name, supportedOperations[], validatePayload(ctx-less), execute(AdapterContext) → AdapterResult, healthCheck(service, creds) → HealthCheckResult, getFinancials?(…) }`. Contract: execute NEVER throws (errors are results); validatePayload runs before credential decryption; healthCheck = real auth-verifying call, zero side effects, ≤5s. Registry: module-level Map, adapters self-register at import time; execute route imports all adapters then resolves by service.id → catalogId.
-
-| Adapter | Operations | Auth | Notable behavior |
-|---|---|---|---|
-| twitter (408 ln) | post-tweet, reply-tweet, delete-tweet | OAuth 1.0a HMAC-SHA1 hand-implemented (RFC3986 encoding, nonce, sorted params) | Dry-run echoes text/charCount; live POST/DELETE /2/tweets; healthCheck GET /2/users/me ("Connected as @user") |
-| reddit (618 ln) | post-text, post-link, comment, delete | OAuth2 script-app password grant; module-level token cache (reuse while >60s left) | Strict subreddit/title/URL/thing-id validation; botDisclosure footer appended; checks json.errors even on HTTP 200; healthCheck /api/v1/me w/ karma |
-| ethereum-wallet (747 ln) | read-balance, send-eth, send-usdc (+ prepareTransaction export) | Private key (server) or MetaMask signing (client); ethers v6 | Networks ethereum/base/sepolia w/ USDC addresses + RPCs + explorers; safety rails: approvedRecipients whitelist (case-insensitive), maxAmountEth default 0.1, maxAmountUsdc default 100; pre-flight balance incl. gas; dry-run returns simulation; waits 1 confirmation; prepareTransaction builds UNSIGNED tx params (ABI-encoded transfer calldata) for eth_sendTransaction — private key never seen in wallet flow; getFinancials → ETH+USDC snapshot |
-| gmail (333 ln) | send-email | OAuth2 refresh-token exchange | Dry-run actually validates credentials (real token exchange, no send); RFC 2822 MIME builder base64url; rich errors w/ phase classification (oauth-token-exchange vs api-call) + credentialCheck presence flags (12-char clientId prefix only) |
-| linkedin (282 ln) | create-post | Static OAuth2 bearer | Two-step: /v2/userinfo → person URN, then POST /rest/posts (LinkedIn-Version header, x-restli-id response); dry-run validates token; 3000-char cap |
-| stripe (159 ln) | [] deliberately none | Basic auth (secretKey) | Connectable/testable but NOT executable ("does not support task execution yet"); healthCheck validates sk_test_/sk_live_ prefix then GET /v1/balance w/ per-currency balances |
-| types.ts (126) | AdapterContext/AdapterResult/PayloadValidation/HealthCheckResult/FinancialMetric/FinancialSnapshot/ServiceAdapter | | |
-| registry.ts (37) | registerAdapter/getAdapter/hasAdapter/listAdapters/adapterCount/listFinancialAdapters | | |
-
-Cross-cutting: failures carry upstream message + apiResponseCode + executionMs; no adapter-layer rate limiting (HTTP 429 surfaces as failure); spend visibility lives at daemon/API layer, not adapters; only Ethereum implements getFinancials today.
+Common interface: `ServiceAdapter { validatePayload, execute, healthCheck, getFinancials? }`. Execute NEVER throws; validatePayload runs before credential decryption; healthCheck = real auth-verifying call. 6 adapters: twitter (OAuth 1.0a, post/reply/delete tweet), reddit (OAuth2 script-app, post/comment/delete), ethereum-wallet (ethers v6, read-balance/send-eth/send-usdc, MetaMask signing flow), gmail (OAuth2, send-email), linkedin (OAuth2 bearer, create-post), stripe (Basic auth, healthCheck only, no execution yet). Full line-level contract analysis in `discovery/mission-control/mc-adapters-linelevel.md`.
 
 ---
 
@@ -357,6 +135,26 @@ Cross-cutting: failures carry upstream message + apiResponseCode + executionMs; 
 
 ---
 
+## 11. Deep-Dive Reports (subfolder)
+
+Detailed line-level analysis of specific subsystems. Each report covers file:line citations for all claims.
+
+| Report | Coverage |
+|---|---|
+| `discovery/mission-control/mc-notifications-alerting.md` | 4 in-app notification channels (toast, bell, sidebar badges, email-configured); pull-only architecture; zero outbound delivery (no OS notifications, no email, no webhooks); notification bridge from Field Ops |
+| `discovery/mission-control/mc-decision-gates.md` | Decision queue as first-class blocking primitive; 6 enforcement points (manual API, daemon dispatcher, run-task guard, mission chain, launch API, reconciler); retry-prompt injection; intercept-and-rerun loop |
+| `discovery/mission-control/mc-chainedispatch-reconciler.md` | Chain-dispatch relay model (relay-race between detached processes); dual reconciler loops; zombie/orphan lifecycle; PID liveness checks |
+| `discovery/mission-control/mc-ai-providers.md` | ZERO LLM API integration (CLI-as-provider only via `claude -p`); prompt construction anatomy; batch-only/streaming-absent design |
+| `discovery/mission-control/mc-service-catalog.md` | 64 pre-configured services across 16 categories; adapter coverage gap (only 6/64 have adapters = 9.4%); MCP metadata-only |
+| `discovery/mission-control/mc-execute-guards.md` | API guard stack; approval state machine; rate limiters; circuit breaker; spend-limit enforcement |
+| `discovery/mission-control/mc-workflow-engine.md` | Daemon internals; prompt builder; mission chain logic; self-continuation model |
+| `discovery/mission-control/mc-ui-frontend.md` | Full page, component, and hook inventory |
+| `discovery/mission-control/mc-frontend-buzz-clients.md` | Field-ops page internals; buzz mobile/web client relay transport |
+| `discovery/mission-control/mc-fieldtask-kanban.md` | Field task data model; approval state machine; service catalog structure |
+| `discovery/mission-control/mc-adapters-linelevel.md` | Per-adapter contract analysis; execute pipeline lifecycle; wallet-signing flow |
+
+---
+
 ## 11. Concepts Worth Carrying Into Fabrica's Transformation
 
 Directly relevant to "desktop CLI agent management and operations platform":
@@ -373,44 +171,21 @@ Directly relevant to "desktop CLI agent management and operations platform":
 
 ---
 
-## ROUND 3 ADDENDUM — orchestrated deep-dive wave (reports in `discovery/round3/`)
+## ROUND 3 ADDENDUM — orchestrated deep-dive wave
 
 | Report | Coverage |
 |---|---|
-| `round3/mc-frontend-buzz-clients.md` (26KB) | Mission-control field-ops pages component-by-component: hub page autonomy selector + stats, activity audit log w/ metadata grid, approvals risk tabs + batch flows, missions list/detail incl. circuit-breaker card + vault-unlock gating with auto-retry, safety budgets/spend bars, services two-tab manager, vault health/session/credential management; hooks/use-field-ops.ts factory internals (optimistic updates, error passthrough) and use-data.ts generic CRUD factory (undo toasts, bulk atomic ops, visibility-gated polling) |
+| `discovery/mission-control/mc-frontend-buzz-clients.md` | Field-ops pages component-by-component; buzz mobile relay transport internals |
 
 ---
 
 
 ---
 
-## ROUND 2 DEEP DIVE — Test contracts, context generator, scripts, app shell
+## ROUND 2 DEEP DIVE — Test contracts, context generator, scripts
 
-### R2.1 Test contracts (what the 193 tests pin)
-- **helpers.ts**: backupDataFiles/restoreDataFiles (in-memory JSON snapshots for isolation); factories createTestTask/createTestGoal/createTestProject with full valid defaults.
-- **daemon.test.ts (~41)**: scrubCredentials (8 patterns incl. sk-/Bearer/GitHub/npm/password/AWS; normal text untouched); validatePathWithinWorkspace (accepts root/nested, rejects ../ and outside-absolute); fenceTaskData delimiters; enforcePromptLimit (100KB boundary exact); validateBinary (claude|claude.cmd|claude.exe only, basename extraction); buildSafeEnv (only safe keys); loadConfig defaults (polling/concurrency/execution/schedule shape); getPendingTasks (not-started + agent-assigned + Eisenhower sort); isTaskUnblocked; hasPendingDecision; type-shape checks.
-- **data.test.ts (~20)**: read/save round-trips preserving 2-space formatting; graceful empty returns for missing files incl. archive; withTasks mutex prevents concurrent-write corruption.
-- **security.test.ts (~22)**: daemonConfigUpdateSchema strictness (range rejections, unknown fields rejected, integer enforcement, incomplete execution section); escapeFenceContent case-insensitive </task-context> escaping + integration; extended scrubbing (xoxb-/xoxp-, Stripe live/test, sk-ant-, SSH PEM markers, postgres/mongo connection strings).
-- **validations.test.ts (~90)**: per-schema accept-minimal/accept-full/reject-bad triples across all ~17 schemas; boundary caps (title max, subtask/tag counts, content 50k); slug ID regex rejections.
-- **integration/agent-flow.test.ts (17)**: 10-step end-to-end lifecycle (create+assign → delegation message → task_created event → in-progress+subtasks → task_updated → complete → report to inbox → task_completed event → full activity-log verification → inbox holds delegation+report); decision request flow (4 steps incl. answered event); blocked-dependency flow (completing blocker unblocks dependent + notification).
-- Config: vitest node env, fileParallelism false (shared real data/ dir), 15s timeouts.
-
-### R2.2 Context generator (scripts/generate-context.ts, 437 lines)
-Writes data/ai-context.md sections in order: header+timestamp · Active Projects (counts + milestone ratios) · Inbox (unread/total + first 5 unread) · Pending Decisions (ids/questions/requesters) · Recent Activity (last 10) · Eisenhower Matrix (quadrant counts + bare task-ID lists) · Kanban pipeline counts · In-Progress Tasks expanded (id/title/assignee/project/milestone/subtask progress/BLOCKED-by) · Goal Progress w/ nested milestones · Unprocessed Brain Dump · Agent Workload sorted desc · Field Ops Status only when data exists (services, mission counts, approval queue listing every pending-approval task, last 5 executions w/ ✅/❌ + ≤2 result fields, last 5 events) · Quick Stats one-liner. Token economy: counts over records, hard caps (5/10/5), only in-progress expanded, quadrant IDs not titles, field-ops section omitted when empty.
-
-### R2.3 Utility scripts
-- fix-stuck-tasks.js: recovery — resets IFA tasks to not-started + zeroes attempts, dismisses pending decisions ("Auto-dismissed: stale auth errors cleared"), filters failed runs from active-runs.json. Bypasses API mutexes (direct file mutation).
-- verify-ifa.js: read-only demo-data audit — project/team/goals/tasks listing, brain-dump conversion check, dependency integrity ("BROKEN DEP" flags for blockedBy refs outside project task set).
-- test-restricted-auth.js: reproduces buildSafeEnv allowlist Windows-aware (PATH/HOME/APPDATA/LOCALAPPDATA/TEMP/SystemRoot/COMSPEC/PATHEXT) and runs `claude auth status` under it to diagnose whether sanitized env breaks Claude CLI auth.
-
-### R2.4 App shell provider chain
-html > body > ThemeProvider(next-themes, class strategy, dark default, system enabled) > [ LayoutShell(TooltipProvider(radix, 300ms) > sidebar + main > ActiveRunsProvider > page), Toaster(sonner, bottom-right) ]. Every page consumes live run status via ActiveRunsProvider context.
-
-### R2.5 Configs
-vitest.config.ts: node env, globals true, __tests__/**/*.test.ts only, fileParallelism false, 15s timeout, @→src alias. eslint.config.mjs: FlatCompat next/core-web-vitals + next/typescript, no custom rules. next.config.ts: allowedDevOrigins localhost variants, devIndicators false, optimizePackageImports [lucide-react].
+Behavioral-contract depth from 193 tests: helpers (backupDataFiles/restoreDataFiles), daemon tests (scrubCredentials, validatePathWithinWorkspace, fenceTaskData, enforcePromptLimit, validateBinary, buildSafeEnv), data tests (read/write round-trips, mutex), security tests (daemonConfigUpdateSchema strictness, escapeFenceContent), validation tests (per-schema accept-minimal/accept-full/reject-bad triples), integration tests (10-step lifecycle, decision flow, blocked-dependency flow). Context generator (437 lines): token-optimized workspace snapshot. Utility scripts: fix-stuck-tasks, verify-ifa, test-restricted-auth. Full detail in subfolder reports listed in §11.
 
 ---
-*Round-1 coverage preserved below; Round 2 added behavioral-contract depth (tests pin the guarantees).*
-
-*Scan coverage: directory tree fully enumerated (492 files excl. .git; ~180 source files); README.md, CLAUDE.md, package.json, ci.yml, middleware.ts, data.ts, vault-crypto.ts read in full; frontend (30 routes, 65 components, 11 hooks, provider), all 59 API routes, 12 lib modules, 14 daemon files, 8 adapter files covered via structured deep-scan. Remaining unread: CONTRIBUTING.md (guidelines only), individual ui/ primitive implementations (shadcn boilerplate).*
+*Round-1 coverage preserved below; Round 2 added behavioral-contract depth (tests pin the guarantees). Scan coverage: directory tree fully enumerated; README.md, CLAUDE.md, package.json, ci.yml, middleware.ts, data.ts, vault-crypto.ts read in full; frontend (30 routes, 65 components, 11 hooks), all 59 API routes, 12 lib modules, 14 daemon files, 8 adapter files covered via structured deep-scan. Remaining unread: CONTRIBUTING.md (guidelines only), individual ui/ primitive implementations (shadcn boilerplate).*
 
