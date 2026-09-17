@@ -4,3 +4,5 @@ out/
 dist/
 *.log
 _frozen-git-histories/
+_sources/buzz/
+_sources/mission-control/
