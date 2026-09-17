@@ -10,7 +10,7 @@ It owns:
 - `analysis/` — synthesis outputs (8 files)
 - `discovery/` — source repo reports (41 + 6 top-level)
 
-The target codebase `Fabrica-app/` stays at the environment root (one level up). Workers read it but never write to it.
+The target codebase `Fabrica/` stays at the environment root (one level up). Workers read it but never write to it.
 
 ## Tech Stack
 
@@ -45,6 +45,6 @@ discovery/                 — source repo reports
 
 ## What You Do NOT Do
 
-- Do NOT edit `_sources/` or `../Fabrica-app/`
+- Do NOT edit `_sources/` or `../Fabrica/`
 - Do NOT commit or push
 - Do NOT touch other projects' tracking files

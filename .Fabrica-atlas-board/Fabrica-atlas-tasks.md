@@ -4,79 +4,75 @@
 
 ## What We Have
 
-### Analysis (synthesis outputs)
+### Discovery (source repo reports) — buzz + mission-control complete; fabrica-app deferred
 
-| File | What it covers |
-|---|---|
-| `analysis/task-notes.md` | Paste-ready task notes FA-N1–N17 for the Fabrica-app board |
-| `analysis/implementation-plan.md` | Phased build plan (A→B→C), TL;DR, risks, PM questions |
-| `analysis/cross-repo-analysis.md` | Similarity analysis + agent-platform integration picture |
-| `analysis/findings-and-recommendations.md` | Verification status, verdicts, contradictions, residual debt |
-| `analysis/production-architecture.md` | Layered architecture, subsystem specs, data model, security |
-| `analysis/agent-platform-integration-map.md` | 5-subsystem composition, shared contracts, verification notes |
-| `analysis/risks.md` | 41-row risk register (5×P0, 17×P1, 19×P2) |
-| `analysis/convergence.md` | Diminishing-findings evidence, program closure recommendation |
 
-### Discovery (source repo reports)
+| Repo            | Folder                       | Reports | Status                                    |
+| --------------- | ---------------------------- | ------- | ----------------------------------------- |
+| mission-control | `discovery/mission-control/` | 9 (index + 8 subsystem) + 1 overview | ✅ Fresh (2026-09-03, commit `2b8c402`) |
+| buzz            | `discovery/buzz/`            | 9 (index + 8 subsystem) + 1 overview | ✅ Fresh (2026-09-03, commit `8868787`) |
+| Fabrica         | `discovery/fabrica-app/`     | 0 | ⏸️ Deferred per PM (T-B.5/B.6 not executed) |
 
-| Repo | Folder | Reports |
-|---|---|---|
-| mission-control | `discovery/mission-control/` | 12 reports (adapters, AI providers, chain-dispatch, decision gates, execute guards, fieldtask/kanban, frontend, notifications, service catalog, UI, workflow engine, AI vault) |
-| buzz | `discovery/buzz/` | 8 reports (agent crates, desktop, DB schema, ops/deploy, pair-relay, relay event kinds, search/pubsub, voice/media) |
-| fabrica-app | `discovery/fabrica-app/` | 21 reports (agent hooks, auth/onboarding, autoupdate, command palette, git, hook parity, IPC watchers, mobile, multi-instance, plugin runtime, PTY, runtime read, search indexing, settings, SSH plane, telemetry, window/tray, WSL, main subsystems, plugins, renderer) |
 
 Top-level discovery docs: `buzz-discovery.md`, `fabrica-app-discovery.md`, `mission-control-discovery.md`
 
+**Note:** Both Fabrica and upstream sources (buzz, mission-control) have changed significantly. Full regeneration from fresh sources is the plan. Sources refreshed on 2026-09-03.
+
 ### Planning
 
-| File | What it tracks |
-|---|---|
+
+| File               | What it tracks                                                  |
+| ------------------ | --------------------------------------------------------------- |
 | `atlas-roadmap.md` | Implementation batches (Settings consolidation + Core Platform) |
 
----
-
-## Rollup
-
-| Metric | Value |
-|---|---|
-| Analysis files | 8 |
-| Discovery reports | 41 + 3 top-level |
-| Verification | Complete — ~850+ citations sampled, 0 FAILED |
 
 ---
 
 ## Checkpoint
 
-| Field | Value |
-|---|---|
-| **Status** | All discovery, verification, and synthesis complete |
-| **Last Action** | Analysis folder restructured (12→8 files, merged duplicates) |
-| **Next Action** | PM decision: go/no-go on implementation |
+
+| Field           | Value                                                                                     |
+| --------------- | ----------------------------------------------------------------------------------------- |
+| **Status**      | T-B.1–B.4 done: buzz + mission-control discovery regenerated. T-B.5/B.6 (fabrica-app) deferred per PM |
+| **Last Action** | Wrote 20 discovery files: 9 buzz + 9 mission-control subsystem reports + 2 overview docs |
+| **Next Action** | PM review of buzz + mission-control reports, then decide on T-B.5/T-B.6 (Fabrica) and T-B.7 (rollup) |
+
 
 ---
 
 ## Next Steps
 
-### 1. Atlas Roadmap — First Batch Selection ✅
-- [x] PM works on `atlas-roadmap.md` to define the first batch of features to build in Fabrica
-- [x] Identify priority items from existing analysis files
-- [x] Group into implementable batches
+### 0. Source Refresh — Update _sources/ from Upstream
 
-### 2. Analytics Review
-- [ ] PM reviews analytics/analysis files for a broader picture
-- [ ] Identify gaps and new items to add to the roadmap
-- [ ] Update roadmap with newly discovered priorities
+- [x] **T-A.1** Delete stale `discovery/` folder (3 top-level docs + 3 subfolders, 41+ reports)
+- [x] **T-A.2** Refresh `_sources/buzz/` — clone latest `main` from `https://github.com/block/buzz`, replace contents, record upstream commit hash — **commit: `88687876f7808a2fd742b7eb2e4b9f87d999ad8d`**
+- [x] **T-A.3** Refresh `_sources/mission-control/` — clone latest `main` from `https://github.com/MeisnerDan/mission-control`, replace contents, record upstream commit hash — **commit: `2b8c402bb4ab04f6c2a3291f832e25a7482ab472`**
+- [x] **T-A.4** Note: `_sources/legacy-fabrica/` stays frozen — do not touch
 
-### 3. Baseline & Proposals
-- [ ] Pull relevant items from `discovery/` files into baseline (how everything already works in Fabrica)
-- [ ] Draft proposals from buzz, mission-control discoveries (how the final version should be)
-- [ ] Ensure each roadmap item has: current state (baseline) + proposed state + source references
+### 1. Discovery Regeneration — From Fresh Sources
+
+- [x] **T-B.1** Regenerate `discovery/buzz/` reports from fresh `_sources/buzz/` — **9 files written** (index + 8 subsystem reports)
+- [x] **T-B.2** Regenerate `discovery/buzz-discovery.md` overview — **written** (full architecture map, commit hash, Fabrica adoption notes)
+- [x] **T-B.3** Regenerate `discovery/mission-control/` reports from fresh `_sources/mission-control/` — **9 files written** (index + 8 subsystem reports)
+- [x] **T-B.4** Regenerate `discovery/mission-control-discovery.md` overview — **written** (full architecture map, commit hash, Fabrica adoption notes)
+- [ ] **T-B.5** Regenerate `discovery/fabrica-app/` reports from current `Fabrica/` *(deferred per PM — NOT done)*
+- [ ] **T-B.6** Regenerate `discovery/fabrica-app-discovery.md` overview *(deferred per PM — NOT done)*
+- [ ] **T-B.7** Update Rollup table with new report counts
+
+### 2. stop there — PM Review those reports
+
+### 3. Baseline &amp; Proposals
+
+- [ ] Pull relevant items from `discovery/` Fabrica files into '.Fabrica-atlas-board/proposals/baseline' (how everything already works in Fabrica)
+- [ ] Draft proposals into '.Fabrica-atlas-board/proposals' from buzz, mission-control discoveries based on the [atlas-roadmap.md](http://atlas-roadmap.md) file (how the final version should be)
+- [ ] Ensure each roadmap group have it own folder and each feature item has: current state (baseline) + proposed state + source references
 
 ### 4. Implementation
-- [ ] Begin implementing batched items in Fabrica-app
-- [ ] Track progress against roadmap
+
+- [ ] Begin implementing batched items in Fabrica
+- [ ] Track progress 
 - [ ] Review and iterate
 
 ---
 
-_Last updated: 2026-09-01_
+*Last updated: 2026-09-03 (T-B.1–B.4 complete: 20 discovery files written)*
